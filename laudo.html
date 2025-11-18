@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#007bff">
+    <title>Laudo Técnico - Vaso de Pressão</title>
+    
+    <link rel="manifest" href="./manifest.json">
+    <link rel="icon" type="image/png" href="./icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    
+    <link rel="stylesheet" href="laudo.css">
+    
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+    <div class="nav-buttons">
+        <button id="prevBtn" class="nav-btn" title="Anterior"></button>
+        <button id="nextBtn" class="nav-btn" title="Próxima"></button>
+        <button id="pdfButton">Gerar PDF</button>
+    </div>
+    
+    <div class="page-indicator" id="pageIndicator">1 / 16</div>
+
+    <div class="page" id="page-1">
+        <div class="page-header"><strong>LAUDO TÉCNICO DE VASO DE PRESSÃO</strong> - Data: <span id="currentDate"></span></div>
+        <div class="image-uploader">
+            <img id="imgPage1" class="image-preview" alt="Vaso">
+            <span class="placeholder-text">
+                <label for="file_gallery_imgPage1" class="upload-btn">Galeria</label>
+                <label for="file_camera_imgPage1" class="upload-btn camera-btn">📷 Foto</label>
+            </span>
+            <input type="file" accept="image/*" id="file_gallery_imgPage1" class="hidden-input">
+            <input type="file" accept="image/*;capture=camera" id="file_camera_imgPage1" class="hidden-input">
+        </div>
+        <h1>LAUDO TÉCNICO DE VASO DE PRESSÃO</h1>
+        <h2 style="background:none; text-align:center; font-size: 14pt;">TAG: <input type="text" id="tag" placeholder="Ex: GA8003" style="width: 150px;"></h2>
+        <p class="center">Número SAP: <input type="text" placeholder="Número SAP" style="width: 150px;"></p>
+        <table>
+            <tr><td><strong>DATA</strong></td><td><strong>INICIO</strong><br><input type="date" id="dataInicio"></td><td><strong>FIM</strong><br><input type="date" id="dataFim"></td></tr>
+        </table>
+        <table>
+            <tr><td colspan="2"><strong>Razão Social:</strong> <strong>LENIN MATHEUS COMINEZI ALMEIDA LTDA</strong></td><td colspan="2"><strong>CNPJ:</strong> <strong>49.695.944/0001-10</strong></td></tr>
+            <tr><td><strong>Profissional</strong></td><td><strong>LENIN MATHEUS COMINEZI ALMEIDA</strong></td><td><strong>Data</strong></td><td><input type="date" id="dataLaudo"></td></tr>
+            <tr><td><strong>CREA/PR</strong></td><td><strong>PR 203716/D</strong></td><td><strong>Atribuição</strong></td><td><strong>ENGENHEIRO MECÂNICO</strong></td></tr>
+            <tr><td><strong>N° Laudo:</strong></td><td><input type="text" id="numeroLaudo" placeholder="Nº"></td><td><strong>N° ART:</strong></td><td><input type="text" id="numeroART" placeholder="Nº"></td></tr>
+        </table>
+        <div class="checkbox-group">
+            <div class="checkbox-item"><input type="checkbox" id="ti1" name="tipoInspecao" value="PERIODICA" checked><label for="ti1">INSPEÇÃO PERIÓDICA</label></div>
+            <div class="checkbox-item"><input type="checkbox" id="ti2" name="tipoInspecao" value="INICIAL"><label for="ti2">INSPEÇÃO INICIAL</label></div>
+            <div class="checkbox-item"><input type="checkbox" id="ti3" name="tipoInspecao" value="EXTRAORDINARIA"><label for="ti3">INSPEÇÃO EXTRAORDINÁRIA</label></div>
+        </div>
+        <div class="page-footer">Página 1 de 16</div>
+    </div>
+
+    <div class="page" id="page-2">
+        <div class="page-header"><strong>LAUDO TÉCNICO</strong> - TAG: <span id="tagHeader2"></span></div>
+        <h2>SUMÁRIO</h2>
+        <table style="border:none;">
+            <tr><td>EMPRESA CONTRATADA</td><td align="right">4</td></tr>
+            <tr><td>EMPRESA CONTRATANTE</td><td align="right">4</td></tr>
+            <tr><td>REFERÊNCIAS NORMATIVAS</td><td align="right">4</td></tr>
+            <tr><td>IDENTIFICAÇÃO DO EQUIPAMENTO</td><td align="right">5</td></tr>
+            <tr><td>CLASSIFICAÇÃO NR13</td><td align="right">5</td></tr>
+            <tr><td>TIPO DE EXAMES</td><td align="right">6</td></tr>
+            <tr><td>REGISTROS DOS EXAMES</td><td align="right">9</td></tr>
+            <tr><td>ENSAIO NÃO DESTRUTIVO</td><td align="right">10</td></tr>
+            <tr><td>RELATÓRIO DE ULTRASSOM</td><td align="right">11</td></tr>
+            <tr><td>MEMORIAL DE CÁLCULO</td><td align="right">12</td></tr>
+            <tr><td>RESULTADOS E PARECER</td><td align="right">16</td></tr>
+        </table>
+        <div class="page-footer">Página 2 de 16</div>
+    </div>
+
+    <div class="page" id="page-3">
+        <div class="page-header"><strong>LAUDO TÉCNICO</strong> - TAG: <span id="tagHeader3"></span></div>
+        <h2>OBJETIVOS</h2>
+        <div class="full-text">O presente laudo busca apresentar os resultados da inspeção de integridade e segurança NR-13 de vasos sob pressão...</div>
+        <ul>
+            <li>Avaliação visual do equipamento;</li>
+            <li>Medição da espessura do vaso (ultrassom);</li>
+            <li>Cálculo da PMTA atualizada;</li>
+            <li>Eliminar perigos e reduzir riscos.</li>
+        </ul>
+        <div class="page-footer">Página 3 de 16</div>
+    </div>
+
+    <div class="page" id="page-4">
+        <div class="page-header"><strong>LAUDO TÉCNICO</strong> - TAG: <span id="tagHeader4"></span></div>
+        <h2>INFORMAÇÕES</h2>
+        <h3>EMPRESA CONTRATADA</h3>
+        <table>
+            <tr><td colspan="4"><strong>LENIN MATHEUS COMINEZI ALMEIDA LTDA</strong></td></tr>
+            <tr><td>CNPJ: 49.695.944/0001-10</td><td>Fone: (42) 9 9945-8479</td></tr>
+        </table>
+        <h3>EMPRESA CONTRATANTE</h3>
+        <table>
+            <tr><td><strong>Nome Fantasia:</strong></td><td><input type="text" placeholder="Nome Fantasia"></td></tr>
+            <tr><td><strong>Razão Social:</strong></td><td><input type="text" placeholder="Razão Social"></td></tr>
+            <tr><td><strong>CNPJ:</strong></td><td><input type="text" placeholder="CNPJ"></td></tr>
+            <tr><td><strong>Endereço:</strong></td><td><input type="text" placeholder="Endereço Completo"></td></tr>
+            <tr><td><strong>Cidade/CEP:</strong></td><td><input type="text" placeholder="Cidade"> / <input type="text" placeholder="CEP"></td></tr>
+            <tr><td><strong>Email/Fone:</strong></td><td><input type="text" placeholder="E-mail"> / <input type="tel" placeholder="Telefone"></td></tr>
+        </table>
+        <h3>REFERÊNCIAS NORMATIVAS</h3>
+        <div class="full-text">- NR-13; ASME Code Section VIII Div 1; NBR 15417...</div>
+        <div class="page-footer">Página 4 de 16</div>
+    </div>
+
+    <div class="page" id="page-5">
+        <div class="page-header"><strong>LAUDO TÉCNICO</strong> - TAG: <span id="tagHeader5"></span></div>
+        <h2>IDENTIFICAÇÃO</h2>
+        <table>
+            <tr><td><strong>TAG</strong></td><td><input type="text" id="tagEquipamento" placeholder="TAG"></td><td><strong>Categoria</strong></td><td><input type="text" placeholder="Categoria"></td></tr>
+            <tr><td><strong>Nº Série</strong></td><td><input type="text" placeholder="Número de Série"></td><td><strong>PMTA Fabr.</strong></td><td><input type="text" placeholder="PMTA do Fabricante"></td></tr>
+            <tr><td><strong>Modelo</strong></td><td><input type="text" placeholder="Modelo"></td><td><strong>Pressão Teste</strong></td><td><input type="text" placeholder="Pressão de Teste"></td></tr>
+            <tr><td><strong>Fabricante</strong></td><td><input type="text" placeholder="Fabricante"></td><td><strong>Fluido</strong></td><td><input type="text" placeholder="Fluido de Serviço"></td></tr>
+            <tr><td><strong>Ano Fabr.</strong></td><td><input type="text" placeholder="Ano de Fabricação"></td><td><strong>Volume</strong></td><td><input type="text" placeholder="Volume"></td></tr>
+            <tr><td><strong>Temp. Máx</strong></td><td><input type="text" placeholder="Temperatura Máxima"></td><td><strong>Setor</strong></td><td><input type="text" placeholder="Setor"></td></tr>
+            <tr><td><strong>Cód. Const.</strong></td><td><input type="text" placeholder="Código de Construção"></td><td><strong>Tipo Vaso</strong></td><td><input type="text" placeholder="Tipo de Vaso"></td></tr>
+        </table>
+        <h3>CLASSIFICAÇÃO NR13</h3>
+        <div class="full-text">Categoria do Vaso conforme tabela NR-13.</div>
+        <div class="page-footer">Página 5 de 16</div>
+    </div>
+
+    <div class="page" id="page-6">
+        <div class="page-header"><strong>LAUDO TÉCNICO</strong> - TAG: <span id="tagHeader6"></span></div>
+        <h2>TIPO DE EXAMES</h2>
+        <div class="full-text">
+        - Exame Visual Externo<br>
+        - Medição de Espessura (Ultrassom)<br>
+        - Mapeamento de Corrosão<br>
+        - Ultrassom (Descontinuidades)
+        </div>
+        <div class="page-footer">Página 6 de 16</div>
+    </div>
+
+    <div class="page" id="page-7">
+        <div class="page-header"><strong>LAUDO TÉCNICO</strong> - TAG: <span id="tagHeader7"></span></div>
+        <h3>CHECKLIST DE INSPEÇÃO</h3>
+        <table>
+            <tr><th>ITEM</th><th>SITUAÇÃO</th><th>OBS</th></tr>
+            <tr><td>Superfície externa</td><td><input type="text" placeholder="Situação"></td><td><input type="text" placeholder="Obs"></td></tr>
+            <tr><td>Pintura/Revestimento</td><td><input type="text" placeholder="Situação"></td><td><input type="text" placeholder="Obs"></td></tr>
+            <tr><td>Suportes/Bases</td><td><input type="text" placeholder="Situação"></td><td><input type="text" placeholder="Obs"></td></tr>
+            <tr><td>Válvulas/Manômetros</td><td><input type="text" placeholder="Situação"></td><td><input type="text" placeholder="Obs"></td></tr>
+            <tr><td>Placa Identificação</td><td><input type="text" placeholder="Situação"></td><td><input type="text" placeholder="Obs"></td></tr>
+        </table>
+        <div class="page-footer">Página 7 de 16</div>
+    </div>
+
+    <div class="page" id="page-8">
+        <div class="page-header"><strong>LAUDO TÉCNICO</strong> - TAG: <span id="tagHeader8"></span></div>
+        <div class="image-uploader">
+            <img id="imgPlaca" class="image-preview" alt="Placa">
+            <span class="placeholder-text"><label for="file_gallery_imgPlaca" class="upload-btn">Placa (Foto)</label></span>
+            <input type="file" accept="image/*" id="file_gallery_imgPlaca" class="hidden-input">
+        </div>
+        <h3>Dispositivos de Segurança</h3>
+        <table>
+            <tr>
+                <td>Válvula</td>
+                <td><input type="text" placeholder="Dados"></td>
+                <td>
+                    <div class="image-uploader" style="min-height:60px; margin:0; padding:5px;">
+                        <img id="imgValvula" class="image-preview" style="max-height:60px; display:none;">
+                        <label for="fg_imgValvula" class="upload-btn-small">📷</label>
+                        <input type="file" accept="image/*" id="fg_imgValvula" class="hidden-input" onchange="handleImageUpload(event, 'imgValvula')">
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td>Manômetro</td>
+                <td><input type="text" placeholder="Dados"></td>
+                <td>
+                    <div class="image-uploader" style="min-height:60px; margin:0; padding:5px;">
+                        <img id="imgManometro" class="image-preview" style="max-height:60px; display:none;">
+                        <label for="fg_imgManometro" class="upload-btn-small">📷</label>
+                        <input type="file" accept="image/*" id="fg_imgManometro" class="hidden-input" onchange="handleImageUpload(event, 'imgManometro')">
+                    </div>
+                </td>
+            </tr>
+        </table>
+        <div class="page-footer">Página 8 de 16</div>
+    </div>
+
+    <div class="page" id="page-9">
+        <div class="page-header"><strong>LAUDO TÉCNICO</strong> - TAG: <span id="tagHeader9"></span></div>
+        <h2>REGISTROS FOTOGRÁFICOS</h2>
+        <table style="border:none;">
+            <tr>
+                <td style="border:none; padding:2px;">
+                   <div class="image-uploader" style="min-height:80px; margin:5px 0;"><img id="imgReg1" class="image-preview"><label for="f_imgReg1" class="upload-btn-small">Foto 1</label><input type="file" id="f_imgReg1" class="hidden-input" onchange="handleImageUpload(event,'imgReg1')"></div>
+                </td>
+                <td style="border:none; padding:2px;">
+                   <div class="image-uploader" style="min-height:80px; margin:5px 0;"><img id="imgReg2" class="image-preview"><label for="f_imgReg2" class="upload-btn-small">Foto 2</label><input type="file" id="f_imgReg2" class="hidden-input" onchange="handleImageUpload(event,'imgReg2')"></div>
+                </td>
+            </tr>
+            <tr>
+                <td style="border:none; padding:2px;">
+                   <div class="image-uploader" style="min-height:80px; margin:5px 0;"><img id="imgReg3" class="image-preview"><label for="f_imgReg3" class="upload-btn-small">Foto 3</label><input type="file" id="f_imgReg3" class="hidden-input" onchange="handleImageUpload(event,'imgReg3')"></div>
+                </td>
+                <td style="border:none; padding:2px;">
+                   <div class="image-uploader" style="min-height:80px; margin:5px 0;"><img id="imgReg4" class="image-preview"><label for="f_imgReg4" class="upload-btn-small">Foto 4</label><input type="file" id="f_imgReg4" class="hidden-input" onchange="handleImageUpload(event,'imgReg4')"></div>
+                </td>
+            </tr>
+        </table>
+        <div class="page-footer">Página 9 de 16</div>
+    </div>
+
+    <div class="page" id="page-10">
+        <div class="page-header"><strong>LAUDO TÉCNICO</strong> - TAG: <span id="tagHeader10"></span></div>
+        <h2>MEDIÇÃO DE ESPESSURA (ME)</h2>
+        <div style="display:flex; gap:5px;">
+            <div class="image-uploader" style="flex:1; min-height:80px;"><img id="imgDiagramaCorpo" class="image-preview"><label for="f_imgDiagramaCorpo" class="upload-btn-small">Corpo</label><input type="file" id="f_imgDiagramaCorpo" class="hidden-input" onchange="handleImageUpload(event,'imgDiagramaCorpo')"></div>
+            <div class="image-uploader" style="flex:1; min-height:80px;"><img id="imgDiagramaEsq" class="image-preview"><label for="f_imgDiagramaEsq" class="upload-btn-small">T.Esq</label><input type="file" id="f_imgDiagramaEsq" class="hidden-input" onchange="handleImageUpload(event,'imgDiagramaEsq')"></div>
+            <div class="image-uploader" style="flex:1; min-height:80px;"><img id="imgDiagramaDir" class="image-preview"><label for="f_imgDiagramaDir" class="upload-btn-small">T.Dir</label><input type="file" id="f_imgDiagramaDir" class="hidden-input" onchange="handleImageUpload(event,'imgDiagramaDir')"></div>
+        </div>
+        
+        <table style="width:100%;">
+            <thead><tr><th>PONTO</th><th>ESPESSURA (mm)</th><th>FOTO</th><th>AÇÃO</th></tr></thead>
+            <tbody id="measurementTableBody">
+                </tbody>
+        </table>
+        <button type="button" class="add-row-btn" style="margin-top:10px; width:100%; padding:10px;">+ Adicionar Ponto</button>
+        
+        <div class="checkbox-group" style="margin-top:15px;">
+            <div class="checkbox-item"><input type="checkbox" id="aprovado" name="resultado" value="APROVADO" checked><label for="aprovado">APROVADO</label></div>
+            <div class="checkbox-item"><input type="checkbox" id="reprovado" name="resultado" value="REPROVADO"><label for="reprovado">REPROVADO</label></div>
+        </div>
+        <div class="page-footer">Página 10 de 16</div>
+    </div>
+
+    <div class="page" id="page-11">
+        <div class="page-header"><strong>LAUDO TÉCNICO</strong> - TAG: <span id="tagHeader11"></span></div>
+        <h3>RELATÓRIO DE ULTRASSOM</h3>
+        <div class="checkbox-group">
+            <div class="checkbox-item"><input type="checkbox" name="superficie" value="LAMINADO" checked><label>LAMINADO</label></div>
+            <div class="checkbox-item"><input type="checkbox" name="superficie" value="SOLDADO"><label>SOLDADO</label></div>
+        </div>
+        <div class="full-text">O vaso sob pressão possui espessuras maiores que as exigidas para o nível de pressão de operação e PMTA...</div>
+        <div class="page-footer">Página 11 de 16</div>
+    </div>
+
+    <div class="page" id="page-12">
+        <div class="page-header"><strong>LAUDO TÉCNICO</strong> - TAG: <span id="tagHeader12"></span></div>
+        <div class="image-uploader">
+            <img id="imgCalcFoto" class="image-preview">
+            <span class="placeholder-text"><label for="f_imgCalcFoto" class="upload-btn">Foto Equipamento</label></span>
+            <input type="file" id="f_imgCalcFoto" class="hidden-input" onchange="handleImageUpload(event,'imgCalcFoto')">
+        </div>
+        <h3>MEMORIAL DE CÁLCULO (INPUTS)</h3>
+        <table>
+            <tr><td>Diâmetro (D)</td><td><input type="number" id="D" placeholder="mm"></td><td>Esp. Casco (Tc)</td><td><input type="number" id="tc" placeholder="mm"></td></tr>
+            <tr><td>Esp. Tampo Esq (Ttl)</td><td><input type="number" id="ttl" placeholder="mm"></td><td>Esp. Tampo Dir (Tts)</td><td><input type="number" id="tts" placeholder="mm"></td></tr>
+            <tr><td>Tensão Casco (Sc)</td><td><input type="number" id="sc" placeholder="Kgf/cm²"></td><td>Tensão Tampo (St)</td><td><input type="number" id="st" placeholder="Kgf/cm²"></td></tr>
+            <tr><td>Eficiência Long (El)</td><td><input type="number" id="el" placeholder="0-1"></td><td>Eficiência Circ (Ec)</td><td><input type="number" id="ec" placeholder="0-1"></td></tr>
+        </table>
+        <div class="page-footer">Página 12 de 16</div>
+    </div>
+
+    <div class="page" id="page-13">
+        <div class="page-header"><strong>LAUDO TÉCNICO</strong> - TAG: <span id="tagHeader13"></span></div>
+        <h2>CÁLCULO PMTA</h2>
+        <table>
+            <tr><th>COMPONENTE</th><th>FÓRMULA</th><th>RESULTADO</th></tr>
+            <tr><td>Casco Long. (P1)</td><td>...</td><td><strong><span id="outP1">-</span> Kgf/cm²</strong></td></tr>
+            <tr><td>Casco Circ. (P2)</td><td>...</td><td><strong><span id="outP2">-</span> Kgf/cm²</strong></td></tr>
+            <tr><td>Tampo Esq. (P3)</td><td>...</td><td><strong><span id="outP3">-</span> Kgf/cm²</strong></td></tr>
+            <tr><td>Tampo Dir. (P4)</td><td>...</td><td><strong><span id="outP4">-</span> Kgf/cm²</strong></td></tr>
+            <tr><td>PMTA ADOTADA</td><td>(Entrada Manual)</td><td><input type="number" id="pmtaAdotada" placeholder="Kgf/cm²"></td></tr>
+            <tr><td>Teste Hidro (Pth)</td><td>PMTA x 1.5</td><td><strong><span id="outPth">-</span> Kgf/cm²</strong></td></tr>
+        </table>
+        <h3>INTERMEDIÁRIOS</h3>
+        <table>
+            <tr><td>L: <span id="outL">-</span></td><td>r: <span id="outR">-</span></td><td>M: <span id="outM">-</span></td></tr>
+        </table>
+        <div class="page-footer">Página 13 de 16</div>
+    </div>
+
+    <div class="page" id="page-14">
+        <div class="page-header"><strong>LAUDO TÉCNICO</strong> - TAG: <span id="tagHeader14"></span></div>
+        <h3>PMTA CALCULADA</h3>
+        <div class="center" style="font-size:14pt; margin:20px; font-weight:bold;">
+            Menor Valor: <span id="outPmtaCalc">-</span> Kgf/cm²<br>
+            (<span id="outPmtaCalcMPa">-</span> MPa)
+        </div>
+        <h2>RECOMENDAÇÕES</h2>
+        <div class="full-text">1) Manutenção preventiva e corretiva periódica.<br>2) Inspeção anual de dispositivos de segurança.<br>3) Planejamento de intervenções.</div>
+        <div class="page-footer">Página 14 de 16</div>
+    </div>
+
+    <div class="page" id="page-15">
+        <div class="page-header"><strong>LAUDO TÉCNICO</strong> - TAG: <span id="tagHeader15"></span></div>
+        <div class="full-text">4) Execução por profissionais habilitados.<br>5) Realização de ENDs.<br>6) Correção imediata de defeitos críticos.</div>
+        <div class="page-footer">Página 15 de 16</div>
+    </div>
+
+    <div class="page" id="page-16">
+        <div class="page-header"><strong>LAUDO TÉCNICO</strong> - TAG: <span id="tagHeader16"></span></div>
+        <h2>CONSIDERAÇÕES FINAIS</h2>
+        <p>O vaso está em acordo com a NR-13.</p>
+        <h2>RESULTADOS</h2>
+        <table>
+            <tr><td>PMTA FINAL</td><td><strong><input type="text" id="pmtaFinalResultado" readonly></strong></td></tr>
+            <tr><td>INSPEÇÃO VISUAL</td><td><input type="text" value="APROVADO"></td></tr>
+            <tr><td>ULTRASSOM</td><td><input type="text" value="APROVADO"></td></tr>
+        </table>
+        <h2>PARECER CONCLUSIVO</h2>
+        <div class="full-text" id="parecerConclusivo">Equipamento liberado para funcionamento.</div>
+        <h2>PRÓXIMA INSPEÇÃO</h2>
+        <input type="date" id="proximaInspecao">
+        
+        <div class="center" style="margin-top:40px;">
+            _______________________________________<br>
+            <strong>LENIN MATHEUS COMINEZI ALMEIDA</strong><br>
+            ENGENHEIRO MECÂNICO<br>CREA-PR 203716/D
+        </div>
+        <div class="page-footer">Página 16 de 16</div>
+    </div>
+
+    <script src="laudo.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js');
+        }
+    </script>
+</body>
+</html>
