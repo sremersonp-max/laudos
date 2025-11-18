@@ -1,8 +1,8 @@
 {
-  "name": "Laudo Vasos Pressão NR-13",
-  "short_name": "Laudo Vasos",
+  "name": "Laudos",
+  "short_name": "Laudos",
   "description": "Sistema completo para laudos técnicos de vasos de pressão",
-  "start_url": "./laudo.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#007bff",
   "theme_color": "#007bff",
