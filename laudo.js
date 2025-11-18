@@ -1,437 +1,570 @@
-// --- Script para Funcionalidades Interativas ---
-
-// Contador global para IDs de fotos de medição
+// --- Configurações Globais ---
 let measurementPhotoCounter = 1;
 let currentPage = 1;
 const totalPages = 16;
+const LAUDOS_KEY = 'laudos_nr13';
 
-// Inicialização da página
-window.onload = function() {
-    // Configurar data atual
+// --- Inicialização Unificada ---
+document.addEventListener('DOMContentLoaded', function() {
+    // 1. Configurar Datas Iniciais
     const today = new Date().toISOString().split('T')[0];
-    document.getElementById('currentDate').textContent = formatDate(today);
-    document.getElementById('dataInicio').value = today;
-    document.getElementById('dataFim').value = today;
-    document.getElementById('dataLaudo').value = today;
+    const elmDate = document.getElementById('currentDate');
+    if(elmDate) elmDate.textContent = formatDate(today);
     
-    // Configurar próxima inspeção (5 anos depois)
+    setValIfEmpty('dataInicio', today);
+    setValIfEmpty('dataFim', today);
+    setValIfEmpty('dataLaudo', today);
+    
+    // Próxima inspeção (5 anos)
     const nextInspection = new Date();
     nextInspection.setFullYear(nextInspection.getFullYear() + 5);
-    document.getElementById('proximaInspecao').value = nextInspection.toISOString().split('T')[0];
-    
-    // Mostrar a primeira página
-    document.getElementById('page-1').style.display = 'block';
-    updateNavigation();
-    updateTagHeaders();
-    
-    // Configurar título para impressão
-    document.title = "Laudo Técnico - Vaso de Pressão";
-    
-    // Configurar checkboxes para seleção única
+    setValIfEmpty('proximaInspecao', nextInspection.toISOString().split('T')[0]);
+
+    // 2. Configurar Botões e Eventos
+    setupActionButtons(); // Cria Salvar/Cancelar na barra
+    setupEventListeners();
     setupCheckboxGroups();
     
-    // Configurar event listeners
-    setupEventListeners();
-};
+    // Definir Ícones de Navegação
+    document.getElementById('prevBtn').innerHTML = '&#8592;'; // Seta Esquerda
+    document.getElementById('nextBtn').innerHTML = '&#8594;'; // Seta Direita
 
-// Configurar todos os event listeners
+    // 3. Verificar Modo (Edição ou Novo)
+    const urlParams = new URLSearchParams(window.location.search);
+    const laudoEmEdicao = JSON.parse(localStorage.getItem('laudo_em_edicao') || 'null');
+    
+    if (laudoEmEdicao) {
+        preencherLaudoComDados(laudoEmEdicao);
+    }
+
+    if (urlParams.get('modo') === 'visualizacao') {
+        bloquearEdicao();
+    }
+
+    // 4. Iniciar na Página 1
+    showPage(1);
+});
+
+// Função auxiliar para não sobrescrever dados se já existirem
+function setValIfEmpty(id, val) {
+    const el = document.getElementById(id);
+    if(el && !el.value) el.value = val;
+}
+
+// --- Navegação e Visibilidade ---
 function setupEventListeners() {
     // Navegação
     document.getElementById('prevBtn').addEventListener('click', () => navigatePages(-1));
     document.getElementById('nextBtn').addEventListener('click', () => navigatePages(1));
-    document.getElementById('pdfButton').addEventListener('click', generatePDF);
     
-    // Upload de imagens
+    // Uploads de imagem
     setupImageUploadListeners();
     
-    // Cálculo PMTA
-    setupPMTACalculationListeners();
+    // Tabela Dinâmica
+    const addRowBtn = document.querySelector('.add-row-btn');
+    if(addRowBtn) addRowBtn.addEventListener('click', addMeasurementRow);
     
-    // Tabela dinâmica
-    document.querySelector('.add-row-btn').addEventListener('click', addMeasurementRow);
-    
-    // Atualização automática de TAG
+    // Atualização de TAG
     document.getElementById('tag').addEventListener('input', updateTagHeaders);
     document.getElementById('tagEquipamento').addEventListener('input', function() {
         document.getElementById('tag').value = this.value;
         updateTagHeaders();
     });
-}
 
-// Configurar listeners para upload de imagens
-function setupImageUploadListeners() {
-    const fileInputs = document.querySelectorAll('input[type="file"]');
-    fileInputs.forEach(input => {
-        input.addEventListener('change', function(event) {
-            const imgId = this.id.replace('file_gallery_', '').replace('file_camera_', '');
-            handleImageUpload(event, imgId);
-        });
+    // Cálculos Automáticos
+    const calcInputs = ['D', 'tc', 'ttl', 'tts', 'sc', 'st', 'el', 'ec', 'pmtaAdotada'];
+    calcInputs.forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.addEventListener('input', calculatePMTA);
     });
 }
 
-// Configurar listeners para cálculo PMTA
-function setupPMTACalculationListeners() {
-    const pmtaInputs = ['D', 'tc', 'ttl', 'tts', 'sc', 'st', 'el', 'ec', 'pmtaAdotada'];
-    pmtaInputs.forEach(id => {
-        const element = document.getElementById(id);
-        if (element) {
-            element.addEventListener('input', calculatePMTA);
-        }
-    });
-}
-
-// Formatar data para exibição
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR');
-}
-
-// Configurar grupos de checkbox para seleção única
-function setupCheckboxGroups() {
-    // Grupo de tipo de inspeção
-    const tipoInspecaoCheckboxes = document.querySelectorAll('input[name="tipoInspecao"]');
-    tipoInspecaoCheckboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-            if (this.checked) {
-                tipoInspecaoCheckboxes.forEach(other => {
-                    if (other !== this) other.checked = false;
-                });
-            }
-        });
-    });
+function navigatePages(direction) {
+    // Esconde página atual
+    document.getElementById(`page-${currentPage}`).style.display = 'none';
     
-    // Grupo de resultado (aprovado/reprovado)
-    const resultadoCheckboxes = document.querySelectorAll('input[name="resultado"]');
-    resultadoCheckboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-            if (this.checked) {
-                resultadoCheckboxes.forEach(other => {
-                    if (other !== this) other.checked = false;
-                });
-            }
-        });
-    });
+    // Calcula nova página
+    currentPage += direction;
+    if (currentPage < 1) currentPage = 1;
+    if (currentPage > totalPages) currentPage = totalPages;
+    
+    // Mostra nova página
+    showPage(currentPage);
 }
 
-// Atualizar headers com a TAG
+function showPage(pageNum) {
+    // Mostrar div da página
+    document.getElementById(`page-${pageNum}`).style.display = 'block';
+    
+    // Atualizar indicador
+    document.getElementById('pageIndicator').textContent = `${pageNum} / ${totalPages}`;
+    
+    // Atualizar estado dos botões de navegação
+    document.getElementById('prevBtn').disabled = (pageNum === 1);
+    document.getElementById('nextBtn').disabled = (pageNum === totalPages);
+    
+    // --- LÓGICA DE BOTÕES (Aparecer só no final) ---
+    const isLastPage = (pageNum === totalPages);
+    const displayStyle = isLastPage ? 'flex' : 'none';
+    
+    // Botões de Ação
+    ['saveBtn', 'cancelBtn', 'pdfButton'].forEach(id => {
+        const btn = document.getElementById(id);
+        if(btn) btn.style.display = displayStyle;
+    });
+
+    updateTagHeaders();
+    window.scrollTo(0, 0);
+}
+
 function updateTagHeaders() {
-    const tag = document.getElementById('tag').value || '[TAG]';
+    const tag = document.getElementById('tag').value || 'TAG';
     for (let i = 2; i <= 16; i++) {
         const header = document.getElementById(`tagHeader${i}`);
         if (header) header.textContent = tag;
     }
 }
 
-// 1. Upload de Imagem
-function handleImageUpload(event, imgId) {
-    const file = event.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        const imgElement = document.getElementById(imgId);
-        
-        // Encontra os botões/placeholder dentro do uploader específico
-        const uploader = document.getElementById(imgId).closest('.image-uploader');
-        const placeholder = uploader.querySelector('.placeholder-text');
-        
-        reader.onload = function(e) {
-            imgElement.src = e.target.result;
-            imgElement.style.display = 'block';
-            if (placeholder) {
-                placeholder.style.display = 'none'; // Esconde os botões
-            }
+// --- Criação dos Botões de Ação ---
+function setupActionButtons() {
+    const navBar = document.querySelector('.nav-buttons');
+    
+    // 1. Botão Cancelar (X Vermelho)
+    if (!document.getElementById('cancelBtn')) {
+        const cancelBtn = document.createElement('button');
+        cancelBtn.id = 'cancelBtn';
+        cancelBtn.innerHTML = '&#10006;'; // X
+        cancelBtn.style.backgroundColor = '#dc3545';
+        cancelBtn.style.display = 'none';
+        cancelBtn.onclick = cancelarEdicao;
+        // Inserir antes do botão Next
+        navBar.insertBefore(cancelBtn, document.getElementById('prevBtn'));
+    }
+    
+    // 2. Botão Salvar (Disquete Verde)
+    if (!document.getElementById('saveBtn')) {
+        const saveBtn = document.createElement('button');
+        saveBtn.id = 'saveBtn';
+        saveBtn.innerHTML = '&#128190;'; // Disquete
+        saveBtn.style.backgroundColor = '#28a745';
+        saveBtn.style.display = 'none';
+        saveBtn.onclick = salvarLaudo;
+        navBar.appendChild(saveBtn);
+    }
+    
+    // 3. Configurar Botão PDF existente
+    const pdfBtn = document.getElementById('pdfButton');
+    if(pdfBtn) {
+        pdfBtn.innerHTML = '&#128462; PDF'; // Documento
+        pdfBtn.onclick = generatePDF;
+        pdfBtn.style.display = 'none';
+        // Move para dentro da barra se estiver fora
+        if(pdfBtn.parentElement !== navBar) {
+            navBar.appendChild(pdfBtn);
         }
-        reader.readAsDataURL(file);
-        
-        // Limpa o input para permitir selecionar a mesma imagem novamente
-        event.target.value = '';
     }
 }
 
-// 2. Navegação entre páginas
-function navigatePages(direction) {
-    // Esconde a página atual
-    document.getElementById(`page-${currentPage}`).style.display = 'none';
-    
-    // Atualiza a página atual
-    currentPage += direction;
-    
-    // Garante que fique dentro dos limites
-    if (currentPage < 1) currentPage = 1;
-    if (currentPage > totalPages) currentPage = totalPages;
-    
-    // Mostra a nova página
-    document.getElementById(`page-${currentPage}`).style.display = 'block';
-    
-    // Atualiza a navegação
-    updateNavigation();
-}
-
-function updateNavigation() {
-    // Atualiza o indicador de página
-    document.getElementById('pageIndicator').textContent = `Página ${currentPage} de ${totalPages}`;
-    
-    // Atualiza os botões de navegação
-    document.getElementById('prevBtn').disabled = (currentPage === 1);
-    document.getElementById('nextBtn').disabled = (currentPage === totalPages);
-    
-    // Atualiza headers com TAG
-    updateTagHeaders();
-}
-
-// 3. Tabela de Medição Dinâmica (Página 10)
-function addMeasurementRow() {
-    measurementPhotoCounter++; // Incrementa o contador para ID único
-    const tableBody = document.getElementById('measurementTableBody');
-    const newRow = tableBody.insertRow();
-    
-    const cell1 = newRow.insertCell(0); // Ponto
-    const cell2 = newRow.insertCell(1); // Espessura
-    const cell3 = newRow.insertCell(2); // Foto da Leitura
-    const cell4 = newRow.insertCell(3); // Ação
-    
-    cell1.innerHTML = '<input type="text" placeholder="Ponto...">';
-    cell2.innerHTML = '<input type="number" step="0.1" placeholder="0.0">';
-    
-    // Adiciona o uploader de imagem com ID único e os dois botões
-    const newImgId = `medPhoto${measurementPhotoCounter}`;
-    cell3.innerHTML = `
-        <div class="image-uploader" style="min-height: 50px; margin:0; padding: 5px;">
-            <img id="${newImgId}" class="image-preview" alt="Foto Leitura" style="max-height: 50px;">
-            <span class="placeholder-text" style="font-size: 9pt;">
-                <label for="file_gallery_${newImgId}" class="upload-btn-small">Arquivo</label>
-                <label for="file_camera_${newImgId}" class="upload-btn-small camera-btn">📷</label>
-            </span>
-            <input type="file" accept="image/*" id="file_gallery_${newImgId}" class="hidden-input">
-            <input type="file" accept="image/*;capture=camera" id="file_camera_${newImgId}" class="hidden-input">
-        </div>`;
-    
-    cell4.innerHTML = '<button type="button" class="remove-row-btn">Remover</button>';
-    cell4.style.textAlign = 'center';
-    
-    // Adiciona event listener para o botão remover
-    cell4.querySelector('.remove-row-btn').addEventListener('click', function() {
-        removeMeasurementRow(this);
-    });
-    
-    // Adiciona event listeners para os novos inputs de arquivo
-    const newFileInputs = cell3.querySelectorAll('input[type="file"]');
-    newFileInputs.forEach(input => {
-        input.addEventListener('change', function(event) {
-            handleImageUpload(event, newImgId);
+// --- Imagens e Uploads ---
+function setupImageUploadListeners() {
+    document.querySelectorAll('input[type="file"]').forEach(input => {
+        input.addEventListener('change', function(e) {
+            let imgId = this.id.replace('file_gallery_', '').replace('file_camera_', '');
+            // Tratamento especial para as linhas dinâmicas da tabela
+            if(this.id.startsWith('fg_') || this.id.startsWith('fc_')) {
+                 imgId = this.id.replace('fg_', '').replace('fc_', '');
+            }
+            handleImageUpload(e, imgId);
         });
     });
 }
 
-function removeMeasurementRow(button) {
-    const row = button.closest('tr');
-    row.parentNode.removeChild(row);
+function handleImageUpload(event, imgId) {
+    const file = event.target.files[0];
+    if (file) {
+        compressImage(file, 800, 0.7, function(compressedSrc) {
+            const imgElement = document.getElementById(imgId);
+            if(imgElement) {
+                imgElement.src = compressedSrc;
+                imgElement.style.display = 'block';
+                
+                // Esconder o texto de placeholder
+                const uploader = imgElement.closest('.image-uploader');
+                if(uploader) {
+                    const ph = uploader.querySelector('.placeholder-text');
+                    if(ph) ph.style.display = 'none';
+                }
+            }
+        });
+    }
 }
 
-// 4. Cálculo Automático de PMTA
-function calculatePMTA() {
-    // Pegar valores dos inputs
-    const D = parseFloat(document.getElementById('D').value) || 0;
-    const Tc = parseFloat(document.getElementById('tc').value) || 0;
-    const Ttl = parseFloat(document.getElementById('ttl').value) || 0;
-    const Tts = parseFloat(document.getElementById('tts').value) || 0;
-    const Sc = parseFloat(document.getElementById('sc').value) || 0;
-    const St = parseFloat(document.getElementById('st').value) || 0;
-    const El = parseFloat(document.getElementById('el').value) || 0;
-    const Ec = parseFloat(document.getElementById('ec').value) || 0;
-    const pmtaAdotada = parseFloat(document.getElementById('pmtaAdotada').value) || 0;
+function compressImage(file, maxWidth, quality, callback) {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = function(event) {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
 
-    // Checagem de segurança
-    if (!D || !Tc || !Ttl || !Tts || !Sc || !St || !El || !Ec) {
-        // Se algum campo essencial estiver vazio, não calcula
-        return;
+            // Redimensionar mantendo proporção
+            if (width > maxWidth) {
+                height *= maxWidth / width;
+                width = maxWidth;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // Converter para Base64 comprimido (JPEG)
+            const dataUrl = canvas.toDataURL('image/jpeg', quality);
+            callback(dataUrl);
+        }
     }
+}
 
-    // Fórmulas do Laudo
+// --- Tabela Dinâmica (Pág 10) ---
+function addMeasurementRow() {
+    measurementPhotoCounter++;
+    const tbody = document.getElementById('measurementTableBody');
+    const row = tbody.insertRow();
+    const newImgId = `medPhoto${measurementPhotoCounter}`;
+    
+    row.innerHTML = `
+        <td><input type="text" placeholder="Ponto"></td>
+        <td><input type="number" step="0.1" placeholder="0.0"></td>
+        <td>
+            <div class="image-uploader" style="min-height: 50px; padding: 5px; margin:0;">
+                <img id="${newImgId}" class="image-preview" style="max-height: 50px; display:none;">
+                <span class="placeholder-text">
+                    <label for="fg_${newImgId}" class="upload-btn-small">📂</label>
+                    <label for="fc_${newImgId}" class="upload-btn-small camera-btn">📷</label>
+                </span>
+                <input type="file" accept="image/*" id="fg_${newImgId}" class="hidden-input" onchange="handleImageUpload(event, '${newImgId}')">
+                <input type="file" accept="image/*;capture=camera" id="fc_${newImgId}" class="hidden-input" onchange="handleImageUpload(event, '${newImgId}')">
+            </div>
+        </td>
+        <td class="center"><button type="button" class="remove-row-btn" onclick="this.closest('tr').remove()">X</button></td>
+    `;
+}
+
+// --- Checkboxes ---
+function setupCheckboxGroups() {
+    ['tipoInspecao', 'resultado', 'superficie'].forEach(name => {
+        const group = document.querySelectorAll(`input[name="${name}"]`);
+        group.forEach(cb => {
+            cb.addEventListener('change', function() {
+                if(this.checked) group.forEach(other => { if(other!==this) other.checked = false; });
+            });
+        });
+    });
+}
+
+// --- Cálculo PMTA ---
+function calculatePMTA() {
+    const v = (id) => parseFloat(document.getElementById(id).value) || 0;
+    
+    const D = v('D'), Tc = v('tc'), Ttl = v('ttl'), Tts = v('tts');
+    const Sc = v('sc'), St = v('st'), El = v('el'), Ec = v('ec');
+    const pmtaAdotada = v('pmtaAdotada');
+
+    if (!D || !Tc) return; 
+
     const L = 0.9045 * D;
     const r = 0.1727 * D;
     const M = 0.25 * (3 + Math.sqrt(L / r));
 
-    // P1 (Casco Long.)
-    const P1_num = 2 * Sc * Tc * El;
-    const P1_den = (D / 2) - (0.4 * Tc);
-    const P1 = P1_den !== 0 ? (P1_num / P1_den) : 0;
-    
-    // P2 (Casco Circ.)
-    const P2_num = Sc * Tc * Ec;
-    const P2_den = (D / 2) + (0.6 * Tc);
-    const P2 = P2_den !== 0 ? (P2_num / P2_den) : 0;
-    
-    // P3 (Tampo Esq.) - Usando T_C no denominador conforme laudo
-    const P3_num = 2 * St * Ttl * Ec;
-    const P3_den = (M * L) + (0.2 * Tc);
-    const P3 = P3_den !== 0 ? (P3_num / P3_den) : 0;
-    
-    // P4 (Tampo Dir.) - Usando T_C no denominador conforme laudo
-    const P4_num = 2 * St * Tts * Ec;
-    const P4_den = (M * L) + (0.2 * Tc);
-    const P4 = P4_den !== 0 ? (P4_num / P4_den) : 0;
-    
-    // PMTA Calculada (Menor entre P2, P3, P4 - P1 não é limitante de PMTA)
+    // Fórmulas
+    const P1 = ((D/2)-0.4*Tc)!==0 ? (2*Sc*Tc*El)/((D/2)-0.4*Tc) : 0;
+    const P2 = ((D/2)+0.6*Tc)!==0 ? (Sc*Tc*Ec)/((D/2)+0.6*Tc) : 0;
+    const P3 = (M*L+0.2*Tc)!==0 ? (2*St*Ttl*Ec)/(M*L+0.2*Tc) : 0;
+    const P4 = (M*L+0.2*Tc)!==0 ? (2*St*Tts*Ec)/(M*L+0.2*Tc) : 0;
+
     const pmtaCalc = Math.min(P2, P3, P4);
 
-    // Teste Hidrostático (baseado na PMTA *Adotada*)
-    const Pth = pmtaAdotada * 1.5;
-
-    // Constantes de conversão
-    const kgfcm2_to_mpa = 0.0980665;
-    const kgfcm2_to_psi = 14.2233;
-
-    // Atualizar campos de saída (Página 13)
-    document.getElementById('outP1').innerText = P1 > 0 ? P1.toFixed(2) : '-';
-    document.getElementById('outP2').innerText = P2 > 0 ? P2.toFixed(2) : '-';
-    document.getElementById('outP3').innerText = P3 > 0 ? P3.toFixed(2) : '-';
-    document.getElementById('outP4').innerText = P4 > 0 ? P4.toFixed(2) : '-';
-    document.getElementById('outPth').innerText = Pth > 0 ? Pth.toFixed(2) : '-';
+    // Atualizar Tela
+    const setTxt = (id, val) => document.getElementById(id).innerText = val > 0 ? val.toFixed(2) : '-';
     
-    // Atualizar campos de saída (Página 14)
-    document.getElementById('outPmtaCalc').innerText = pmtaCalc > 0 ? pmtaCalc.toFixed(2) : '-';
-    document.getElementById('outPmtaCalcMPa').innerText = pmtaCalc > 0 ? (pmtaCalc * kgfcm2_to_mpa).toFixed(2) : '-';
-    document.getElementById('outPmtaCalcPSI').innerText = pmtaCalc > 0 ? (pmtaCalc * kgfcm2_to_psi).toFixed(2) : '-';
+    setTxt('outP1', P1); setTxt('outP2', P2); setTxt('outP3', P3); setTxt('outP4', P4);
+    setTxt('outPth', pmtaAdotada * 1.5);
+    
+    setTxt('outL', L); setTxt('outR', r);
+    document.getElementById('outM').innerText = M > 0 ? M.toFixed(4) : '-';
+    
+    setTxt('outPmtaCalc', pmtaCalc);
+    setTxt('outPmtaCalcMPa', pmtaCalc * 0.0980665);
+    setTxt('outPmtaCalcPSI', pmtaCalc * 14.2233);
 
-    // Atualizar campos finais (Página 16)
     if (pmtaAdotada > 0) {
         document.getElementById('pmtaFinalResultado').value = pmtaAdotada.toFixed(2) + " Kgf/cm²";
-        
-        const parecer = document.getElementById('parecerConclusivo');
-        parecer.textContent = `Através dos resultados obtidos inspeção de espessura de chapa em obediência à NR-13 e atendendo os requisitos apontados neste laudo, o equipamento estará liberado para funcionamento normal, dentro dos limites estabelecidos pela PMTA. O valor da PMTA calculado pelo presente documento foi de ${pmtaAdotada.toFixed(2)} kgf/cm².`;
     }
+    
+    if(window.MathJax) MathJax.typeset();
 }
 
-// 5. Função para gerar PDF
-// 5. Função para gerar PDF - OTIMIZADA
+// --- Geração de PDF ---
 function generatePDF() {
-    // Esconder elementos de navegação antes da impressão
-    document.querySelector('.nav-buttons').style.display = 'none';
-    document.querySelector('.page-indicator').style.display = 'none';
-    document.getElementById('pdfButton').style.display = 'none';
-    
-    // Mostrar todas as páginas antes de imprimir
+    // Esconder a barra de navegação
+    const nav = document.querySelector('.nav-buttons');
+    const indicator = document.querySelector('.page-indicator');
+    if(nav) nav.style.display = 'none';
+    if(indicator) indicator.style.display = 'none';
+
+    // Mostrar todas as páginas
     for (let i = 1; i <= totalPages; i++) {
-        const page = document.getElementById(`page-${i}`);
-        page.style.display = 'block';
-        page.style.position = 'relative';
-        page.style.margin = '0';
+        document.getElementById(`page-${i}`).style.display = 'block';
     }
-    
-    // Aguardar um momento para garantir renderização
+
     setTimeout(() => {
         window.print();
         
-        // Restaurar a visualização normal após a impressão
+        // Restaurar
         setTimeout(() => {
-            restorePageView();
+            if(nav) nav.style.display = 'flex';
+            if(indicator) indicator.style.display = 'block';
+            
+            // Voltar para mostrar só a página atual
+            for (let i = 1; i <= totalPages; i++) {
+                document.getElementById(`page-${i}`).style.display = (i === currentPage) ? 'block' : 'none';
+            }
         }, 500);
     }, 300);
-}// [TODO O CÓDIGO JS EXISTENTE PERMANECE IGUAL ATÉ A FUNÇÃO calculatePMTA]
+}
 
-// 4. Cálculo Automático de PMTA - ATUALIZADA
-function calculatePMTA() {
-    // Pegar valores dos inputs
-    const D = parseFloat(document.getElementById('D').value) || 0;
-    const Tc = parseFloat(document.getElementById('tc').value) || 0;
-    const Ttl = parseFloat(document.getElementById('ttl').value) || 0;
-    const Tts = parseFloat(document.getElementById('tts').value) || 0;
-    const Sc = parseFloat(document.getElementById('sc').value) || 0;
-    const St = parseFloat(document.getElementById('st').value) || 0;
-    const El = parseFloat(document.getElementById('el').value) || 0;
-    const Ec = parseFloat(document.getElementById('ec').value) || 0;
-    const pmtaAdotada = parseFloat(document.getElementById('pmtaAdotada').value) || 0;
+// --- Salvar e Carregar (COMPLETO) ---
+function coletarDadosLaudo() {
+    const getVal = (s) => document.querySelector(s)?.value || '';
+    const getImg = (id) => {
+        const img = document.getElementById(id);
+        return (img && img.src.startsWith('data:')) ? img.src : '';
+    };
 
-    // Checagem de segurança
-    if (!D || !Tc || !Ttl || !Tts || !Sc || !St || !El || !Ec) {
-        // Se algum campo essencial estiver vazio, não calcula
-        return;
-    }
+    // --- CORREÇÃO: Coletar linhas dinâmicas da tabela de medição ---
+    const medicoes = [];
+    document.querySelectorAll('#measurementTableBody tr').forEach((row) => {
+        const inputs = row.querySelectorAll('input[type="text"], input[type="number"]');
+        const img = row.querySelector('.image-preview');
+        if(inputs.length >= 2) {
+            medicoes.push({
+                ponto: inputs[0].value,
+                espessura: inputs[1].value,
+                foto: (img && img.src.startsWith('data:')) ? img.src : ''
+            });
+        }
+    });
+    // --------------------------------------------------------------
 
-    // CÁLCULOS INTERMEDIÁRIOS - TAMPOS TORISFÉRICOS
-    const L = 0.9045 * D;
-    const r = 0.1727 * D;
-    const M = 0.25 * (3 + Math.sqrt(L / r));
-
-    // Fórmulas do Laudo
-    // P1 (Casco Long.)
-    const P1_num = 2 * Sc * Tc * El;
-    const P1_den = (D / 2) - (0.4 * Tc);
-    const P1 = P1_den !== 0 ? (P1_num / P1_den) : 0;
-    
-    // P2 (Casco Circ.)
-    const P2_num = Sc * Tc * Ec;
-    const P2_den = (D / 2) + (0.6 * Tc);
-    const P2 = P2_den !== 0 ? (P2_num / P2_den) : 0;
-    
-    // P3 (Tampo Esq.)
-    const P3_num = 2 * St * Ttl * Ec;
-    const P3_den = (M * L) + (0.2 * Tc);
-    const P3 = P3_den !== 0 ? (P3_num / P3_den) : 0;
-    
-    // P4 (Tampo Dir.)
-    const P4_num = 2 * St * Tts * Ec;
-    const P4_den = (M * L) + (0.2 * Tc);
-    const P4 = P4_den !== 0 ? (P4_num / P4_den) : 0;
-    
-    // PMTA Calculada (Menor entre P2, P3, P4)
-    const pmtaCalc = Math.min(P2, P3, P4);
-
-    // Teste Hidrostático (baseado na PMTA *Adotada*)
-    const Pth = pmtaAdotada * 1.5;
-
-    // Constantes de conversão
-    const kgfcm2_to_mpa = 0.0980665;
-    const kgfcm2_to_psi = 14.2233;
-
-    // Atualizar campos de saída (Página 13)
-    document.getElementById('outP1').innerText = P1 > 0 ? P1.toFixed(2) : '-';
-    document.getElementById('outP2').innerText = P2 > 0 ? P2.toFixed(2) : '-';
-    document.getElementById('outP3').innerText = P3 > 0 ? P3.toFixed(2) : '-';
-    document.getElementById('outP4').innerText = P4 > 0 ? P4.toFixed(2) : '-';
-    document.getElementById('outPth').innerText = Pth > 0 ? Pth.toFixed(2) : '-';
-    
-    // Atualizar cálculos intermediários (Página 13)
-    document.getElementById('outL').innerText = L > 0 ? L.toFixed(2) : '-';
-    document.getElementById('outR').innerText = r > 0 ? r.toFixed(2) : '-';
-    document.getElementById('outM').innerText = M > 0 ? M.toFixed(4) : '-';
-    
-    // Atualizar campos de saída (Página 14)
-    document.getElementById('outPmtaCalc').innerText = pmtaCalc > 0 ? pmtaCalc.toFixed(2) : '-';
-    document.getElementById('outPmtaCalcMPa').innerText = pmtaCalc > 0 ? (pmtaCalc * kgfcm2_to_mpa).toFixed(2) : '-';
-    document.getElementById('outPmtaCalcPSI').innerText = pmtaCalc > 0 ? (pmtaCalc * kgfcm2_to_psi).toFixed(2) : '-';
-
-    // Atualizar campos finais (Página 16)
-    if (pmtaAdotada > 0) {
-        document.getElementById('pmtaFinalResultado').value = pmtaAdotada.toFixed(2) + " Kgf/cm²";
+    return {
+        tag: document.getElementById('tag').value,
+        numeroLaudo: document.getElementById('numeroLaudo').value,
+        numeroART: document.getElementById('numeroART').value,
+        dataInicio: document.getElementById('dataInicio').value,
+        dataFim: document.getElementById('dataFim').value,
+        dataLaudo: document.getElementById('dataLaudo').value,
         
-        const parecer = document.getElementById('parecerConclusivo');
-        parecer.textContent = `Através dos resultados obtidos inspeção de espessura de chapa em obediência à NR-13 e atendendo os requisitos apontados neste laudo, o equipamento estará liberado para funcionamento normal, dentro dos limites estabelecidos pela PMTA. O valor da PMTA calculado pelo presente documento foi de ${pmtaAdotada.toFixed(2)} kgf/cm².`;
-    }
+        // Checkboxes
+        tipoInspecao: Array.from(document.querySelectorAll('input[name="tipoInspecao"]:checked')).map(cb => cb.value),
+        
+        // Medições dinâmicas
+        medicoes: medicoes,
 
-    // Forçar atualização das equações MathJax
-    if (window.MathJax) {
-        MathJax.typeset();
-    }
+        // Grupos
+        empresaContratante: {
+            nomeFantasia: getVal('input[placeholder="Nome Fantasia"]'),
+            razaoSocial: getVal('input[placeholder="Razão Social"]'),
+            cnpj: getVal('input[placeholder="CNPJ"]'),
+            cidade: getVal('input[placeholder="Cidade"]'),
+            cep: getVal('input[placeholder="CEP"]'),
+            email: getVal('input[placeholder="E-mail"]'),
+            endereco: getVal('input[placeholder="Endereço Completo"]'),
+            telefone: getVal('input[placeholder="Telefone"]')
+        },
+        equipamento: {
+            tag: document.getElementById('tagEquipamento').value,
+            categoria: getVal('input[placeholder="Categoria"]'),
+            numeroSerie: getVal('input[placeholder="Número de Série"]'),
+            pmtaFabricante: getVal('input[placeholder="PMTA do Fabricante"]'),
+            modelo: getVal('input[placeholder="Modelo"]'),
+            pressaoTeste: getVal('input[placeholder="Pressão de Teste"]'),
+            fabricante: getVal('input[placeholder="Fabricante"]'),
+            fluidoServico: getVal('input[placeholder="Fluido de Serviço"]'),
+            anoFabricacao: getVal('input[placeholder="Ano de Fabricação"]'),
+            volume: getVal('input[placeholder="Volume"]'),
+            temperaturaMaxima: getVal('input[placeholder="Temperatura Máxima"]'),
+            setor: getVal('input[placeholder="Setor"]'),
+            codigoConstrucao: getVal('input[placeholder="Código de Construção"]'),
+            tipoVaso: getVal('input[placeholder="Tipo de Vaso"]')
+        },
+        parametrosCalculo: {
+            D: document.getElementById('D').value,
+            tc: document.getElementById('tc').value,
+            ttl: document.getElementById('ttl').value,
+            tts: document.getElementById('tts').value,
+            sc: document.getElementById('sc').value,
+            st: document.getElementById('st').value,
+            el: document.getElementById('el').value,
+            ec: document.getElementById('ec').value
+        },
+        pmtaAdotada: document.getElementById('pmtaAdotada').value,
+        pmtaFinalResultado: document.getElementById('pmtaFinalResultado').value,
+        proximaInspecao: document.getElementById('proximaInspecao').value,
+        
+        // Imagens principais (adicione mais IDs conforme criar novos campos)
+        imagens: {
+            imgPage1: getImg('imgPage1'),
+            imgPlaca: getImg('imgPlaca'),
+            imgValvula: getImg('imgValvula'),
+            imgManometro: getImg('imgManometro'),
+            imgReg1: getImg('imgReg1'),
+            imgReg2: getImg('imgReg2'),
+            imgReg3: getImg('imgReg3'),
+            imgReg4: getImg('imgReg4'),
+            imgCalcFoto: getImg('imgCalcFoto'),
+            imgDiagramaCorpo: getImg('imgDiagramaCorpo'),
+            imgDiagramaEsq: getImg('imgDiagramaEsq'),
+            imgDiagramaDir: getImg('imgDiagramaDir')
+        },
+        dataSalvamento: new Date().toISOString()
+    };
 }
 
-// [O RESTO DO CÓDIGO JS PERMANECE IGUAL]
+function preencherLaudoComDados(dados) {
+    if (!dados) return;
+    const setVal = (id, v) => { const el = document.getElementById(id); if(el && v) el.value = v; };
+    const setPh = (ph, v) => { const el = document.querySelector(`input[placeholder="${ph}"]`); if(el && v) el.value = v; };
 
-// Função para restaurar visualização normal
-function restorePageView() {
-    // Restaurar elementos de navegação
-    document.querySelector('.nav-buttons').style.display = 'flex';
-    document.querySelector('.page-indicator').style.display = 'block';
-    document.getElementById('pdfButton').style.display = 'block';
+    // Campos Básicos
+    setVal('tag', dados.tag);
+    setVal('numeroLaudo', dados.numeroLaudo);
+    setVal('numeroART', dados.numeroART);
+    setVal('dataInicio', dados.dataInicio);
+    setVal('dataFim', dados.dataFim);
+    setVal('dataLaudo', dados.dataLaudo);
+    setVal('pmtaAdotada', dados.pmtaAdotada);
+    setVal('pmtaFinalResultado', dados.pmtaFinalResultado);
+    setVal('proximaInspecao', dados.proximaInspecao);
+
+    // Checkboxes
+    if(dados.tipoInspecao) {
+        document.querySelectorAll('input[name="tipoInspecao"]').forEach(cb => {
+            cb.checked = dados.tipoInspecao.includes(cb.value);
+        });
+    }
+
+    // --- CORREÇÃO: Recriar linhas dinâmicas da tabela ---
+    if (dados.medicoes && Array.isArray(dados.medicoes)) {
+        const tbody = document.getElementById('measurementTableBody');
+        tbody.innerHTML = ''; // Limpa a tabela
+        
+        dados.medicoes.forEach(med => {
+            addMeasurementRow(); // Cria a estrutura HTML e gera IDs novos
+            // Pega a última linha inserida
+            const rows = tbody.querySelectorAll('tr');
+            const lastRow = rows[rows.length - 1];
+            const inputs = lastRow.querySelectorAll('input[type="text"], input[type="number"]');
+            
+            if(inputs.length >= 2) {
+                inputs[0].value = med.ponto || '';
+                inputs[1].value = med.espessura || '';
+            }
+            
+            if(med.foto) {
+                const img = lastRow.querySelector('.image-preview');
+                if(img) {
+                    img.src = med.foto;
+                    img.style.display = 'block';
+                    const uploader = lastRow.querySelector('.image-uploader');
+                    const ph = uploader.querySelector('.placeholder-text');
+                    if(ph) ph.style.display = 'none';
+                }
+            }
+        });
+    }
+    // ---------------------------------------------------
+
+    // Objetos
+    if(dados.empresaContratante) {
+        const e = dados.empresaContratante;
+        setPh("Nome Fantasia", e.nomeFantasia); setPh("Razão Social", e.razaoSocial);
+        setPh("CNPJ", e.cnpj); setPh("Cidade", e.cidade); setPh("CEP", e.cep);
+        setPh("E-mail", e.email); setPh("Endereço Completo", e.endereco); setPh("Telefone", e.telefone);
+    }
+    if(dados.equipamento) {
+        const q = dados.equipamento;
+        setVal('tagEquipamento', q.tag);
+        setPh("Categoria", q.categoria); setPh("Número de Série", q.numeroSerie);
+        setPh("PMTA do Fabricante", q.pmtaFabricante); setPh("Modelo", q.modelo);
+        setPh("Pressão de Teste", q.pressaoTeste); setPh("Fabricante", q.fabricante);
+        setPh("Fluido de Serviço", q.fluidoServico); setPh("Ano de Fabricação", q.anoFabricacao);
+        setPh("Volume", q.volume); setPh("Temperatura Máxima", q.temperaturaMaxima);
+        setPh("Setor", q.setor); setPh("Código de Construção", q.codigoConstrucao);
+        setPh("Tipo de Vaso", q.tipoVaso);
+    }
+    if(dados.parametrosCalculo) {
+        const p = dados.parametrosCalculo;
+        setVal('D', p.D); setVal('tc', p.tc); setVal('ttl', p.ttl); setVal('tts', p.tts);
+        setVal('sc', p.sc); setVal('st', p.st); setVal('el', p.el); setVal('ec', p.ec);
+    }
+
+    // Imagens fixas
+    if(dados.imagens) {
+        Object.keys(dados.imagens).forEach(id => {
+            const el = document.getElementById(id);
+            if(el && dados.imagens[id]) {
+                el.src = dados.imagens[id];
+                el.style.display = 'block';
+                const uploader = el.closest('.image-uploader');
+                if(uploader) {
+                    const ph = uploader.querySelector('.placeholder-text');
+                    if(ph) ph.style.display = 'none';
+                }
+            }
+        });
+    }
     
-    // Restaurar visualização da página atual
-    for (let i = 1; i <= totalPages; i++) {
-        document.getElementById(`page-${i}`).style.display = 'none';
-    }
-    document.getElementById(`page-${currentPage}`).style.display = 'block';
+    calculatePMTA();
+    updateTagHeaders();
 }
 
+function salvarLaudo() {
+    const dados = coletarDadosLaudo();
+    if (!dados.tag) return alert('Por favor, preencha a TAG (Página 1) antes de salvar.');
+    
+    const laudos = JSON.parse(localStorage.getItem(LAUDOS_KEY) || '[]');
+    const edicao = JSON.parse(localStorage.getItem('laudo_em_edicao') || 'null');
+    
+    if (edicao && edicao.index !== undefined) {
+        laudos[edicao.index] = dados;
+    } else {
+        laudos.push(dados);
+    }
+    
+    localStorage.setItem(LAUDOS_KEY, JSON.stringify(laudos));
+    localStorage.removeItem('laudo_em_edicao');
+    alert('Laudo salvo com sucesso!');
+    window.location.href = 'index.html';
+}
 
+function cancelarEdicao() {
+    if (confirm('Deseja cancelar? Alterações não salvas serão perdidas.')) {
+        localStorage.removeItem('laudo_em_edicao');
+        window.location.href = 'index.html';
+    }
+}
 
+function bloquearEdicao() {
+    document.querySelectorAll('.nav-buttons, .upload-btn, .add-row-btn, .remove-row-btn').forEach(e => e.style.display='none');
+    document.querySelectorAll('input, textarea, select').forEach(e => e.readOnly=true);
+    document.querySelectorAll('input[type="checkbox"]').forEach(e => e.disabled=true);
+}
 
-
+function formatDate(str) {
+    if(!str) return '';
+    return new Date(str).toLocaleDateString('pt-BR');
+}

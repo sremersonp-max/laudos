@@ -1,7 +1,8 @@
 // Service Worker para Laudo Vasos PWA
-const CACHE_NAME = 'laudo-vasos-v1.1';
+const CACHE_NAME = 'laudo-vasos-v1.5';
 const urlsToCache = [
   './',
+  './index.html',
   './laudo.html',
   './laudo.css',
   './laudo.js',
@@ -60,7 +61,7 @@ self.addEventListener('fetch', function(event) {
       .catch(function() {
         // Fallback para páginas
         if (event.request.destination === 'document') {
-          return caches.match('./laudo.html');
+          return caches.match('./index.html');
         }
       })
   );
