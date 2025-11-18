@@ -1,1026 +1,332 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-
-
-				<!-- ========== PWA CONFIG ========== -->
-		<meta name="theme-color" content="#007bff">
-		<meta name="apple-mobile-web-app-capable" content="yes">
-		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-		<meta name="apple-mobile-web-app-title" content="Laudo Vasos">
-
-<!-- Manifest -->
-<link rel="manifest" href="./manifest.json">
-
-<!-- Ícones -->
-<link rel="icon" type="image/png" href="./icon-192.png">
-<link rel="apple-touch-icon" href="./icon-192.png">
-
-<!-- Service Worker Registration -->
-<script>
-// Detectar se é PWA
-function isRunningStandalone() {
-  return (window.matchMedia('(display-mode: standalone)').matches) || 
-         (window.navigator.standalone) || 
-         (document.referrer.includes('android-app://'));
-}
-
-// Registrar Service Worker
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function() {
-    navigator.serviceWorker.register('./sw.js', { scope: './' })
-      .then(function(registration) {
-        console.log('SW registrado com sucesso: ', registration.scope);
-        
-        // Verificar se já está rodando como PWA
-        if (isRunningStandalone()) {
-          console.log("Executando como PWA!");
-          document.body.classList.add('pwa-mode');
-        }
-        
-        // Ouvir mudanças no display mode
-        window.matchMedia('(display-mode: standalone)').addEventListener('change', function(e) {
-          if (e.matches) {
-            console.log("Mudou para modo PWA!");
-            document.body.classList.add('pwa-mode');
-          } else {
-            document.body.classList.remove('pwa-mode');
-          }
-        });
-      })
-      .catch(function(error) {
-        console.log('Falha no registro do SW: ', error);
-      });
-  });
-} else {
-  console.log('Service Worker não suportado neste navegador');
-}
-</script>
-<!-- ========== FIM PWA ========== -->
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#007bff">
     <title>Laudo Técnico - Vaso de Pressão</title>
+    
+    <link rel="manifest" href="./manifest.json">
+    <link rel="icon" type="image/png" href="./icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    
     <link rel="stylesheet" href="laudo.css">
-    <!-- Biblioteca MathJax para renderizar equações -->
+    
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-
 </head>
 <body>
-    <!-- Botões de Navegação -->
     <div class="nav-buttons">
-        <button class="nav-btn" id="prevBtn">Anterior</button>
-        <button class="nav-btn" id="nextBtn">Próxima</button>
+        <button id="prevBtn" class="nav-btn" title="Anterior"></button>
+        <button id="nextBtn" class="nav-btn" title="Próxima"></button>
+        <button id="pdfButton">Gerar PDF</button>
     </div>
     
-    <!-- Indicador de Página -->
-    <div class="page-indicator" id="pageIndicator">Página 1 de 16</div>
-    
-    <!-- Botão Gerar PDF -->
-    <button id="pdfButton">Gerar PDF</button>
+    <div class="page-indicator" id="pageIndicator">1 / 16</div>
 
-    <!-- PÁGINA 1 -->
     <div class="page" id="page-1">
-        <div class="page-header">
-            <strong>LAUDO TÉCNICO DE VASO DE PRESSÃO</strong> - Data: <span id="currentDate"></span>
-        </div>
-        
+        <div class="page-header"><strong>LAUDO TÉCNICO DE VASO DE PRESSÃO</strong> - Data: <span id="currentDate"></span></div>
         <div class="image-uploader">
-            <img id="imgPage1" class="image-preview" alt="Imagem do Vaso">
+            <img id="imgPage1" class="image-preview" alt="Vaso">
             <span class="placeholder-text">
-                <label for="file_gallery_imgPage1" class="upload-btn">Abrir Arquivos</label>
-                <label for="file_camera_imgPage1" class="upload-btn camera-btn">📷 Tirar Foto</label>
+                <label for="file_gallery_imgPage1" class="upload-btn">Galeria</label>
+                <label for="file_camera_imgPage1" class="upload-btn camera-btn">📷 Foto</label>
             </span>
             <input type="file" accept="image/*" id="file_gallery_imgPage1" class="hidden-input">
             <input type="file" accept="image/*;capture=camera" id="file_camera_imgPage1" class="hidden-input">
         </div>
-        
         <h1>LAUDO TÉCNICO DE VASO DE PRESSÃO</h1>
-        
-        <h2 style="background:none; text-align:center; font-size: 14pt;">Vaso de Pressão TAG: <input type="text" id="tag" placeholder="Ex: GA8003" style="width: 150px;"></h2>
-        <p class="center" style="font-size: 12pt;">Número SAP: <input type="text" placeholder="Número SAP" style="width: 150px;"></p>
-
+        <h2 style="background:none; text-align:center; font-size: 14pt;">TAG: <input type="text" id="tag" placeholder="Ex: GA8003" style="width: 150px;"></h2>
+        <p class="center">Número SAP: <input type="text" placeholder="Número SAP" style="width: 150px;"></p>
         <table>
-            <tr>
-                <td><strong>DATA</strong></td>
-                <td><strong>INICIO</strong><br><input type="date" id="dataInicio"></td>
-                <td><strong>FIM</strong><br><input type="date" id="dataFim"></td>
-            </tr>
+            <tr><td><strong>DATA</strong></td><td><strong>INICIO</strong><br><input type="date" id="dataInicio"></td><td><strong>FIM</strong><br><input type="date" id="dataFim"></td></tr>
         </table>
-
-        <!-- DADOS FIXOS DA EMPRESA CONTRATADA -->
         <table>
-            <tr>
-                <td colspan="2"><strong>Razão Social:</strong> <strong>LENIN MATHEUS COMINEZI ALMEIDA LTDA</strong></td>
-                <td colspan="2"><strong>CNPJ:</strong> <strong>49.695.944/0001-10</strong></td>
-            </tr>
-            <tr>
-                <td><strong>Nome profissional</strong></td>
-                <td><strong>LENIN MATHEUS COMINEZI ALMEIDA</strong></td>
-                <td><strong>Data</strong></td>
-                <td><input type="date" id="dataLaudo"></td>
-            </tr>
-            <tr>
-                <td><strong>CREA/PR</strong></td>
-                <td><strong>PR 203716/D</strong></td>
-                <td><strong>Atribuição</strong></td>
-                <td><strong>ENGENHEIRO MECÂNICO</strong></td>
-            </tr>
-            <tr>
-                <td><strong>N° do laudo:</strong></td>
-                <td><input type="text" id="numeroLaudo" placeholder="Número do Laudo"></td>
-                <td><strong>N° ART:</strong></td>
-                <td><input type="text" id="numeroART" placeholder="Número da ART"></td>
-            </tr>
+            <tr><td colspan="2"><strong>Razão Social:</strong> <strong>LENIN MATHEUS COMINEZI ALMEIDA LTDA</strong></td><td colspan="2"><strong>CNPJ:</strong> <strong>49.695.944/0001-10</strong></td></tr>
+            <tr><td><strong>Profissional</strong></td><td><strong>LENIN MATHEUS COMINEZI ALMEIDA</strong></td><td><strong>Data</strong></td><td><input type="date" id="dataLaudo"></td></tr>
+            <tr><td><strong>CREA/PR</strong></td><td><strong>PR 203716/D</strong></td><td><strong>Atribuição</strong></td><td><strong>ENGENHEIRO MECÂNICO</strong></td></tr>
+            <tr><td><strong>N° Laudo:</strong></td><td><input type="text" id="numeroLaudo" placeholder="Nº"></td><td><strong>N° ART:</strong></td><td><input type="text" id="numeroART" placeholder="Nº"></td></tr>
         </table>
-
-        <!-- CHECKBOXES SELECIONÁVEIS -->
         <div class="checkbox-group">
-            <div class="checkbox-item">
-                <input type="checkbox" id="tipoInspecao1" name="tipoInspecao" value="PERIODICA" checked>
-                <label for="tipoInspecao1" class="checkbox-label">INSPEÇÃO PERIÓDICA</label>
-            </div>
-            <div class="checkbox-item">
-                <input type="checkbox" id="tipoInspecao2" name="tipoInspecao" value="INICIAL">
-                <label for="tipoInspecao2" class="checkbox-label">INSPEÇÃO INICIAL</label>
-            </div>
-            <div class="checkbox-item">
-                <input type="checkbox" id="tipoInspecao3" name="tipoInspecao" value="EXTRAORDINARIA">
-                <label for="tipoInspecao3" class="checkbox-label">INSPEÇÃO EXTRAORDINÁRIA</label>
-            </div>
+            <div class="checkbox-item"><input type="checkbox" id="ti1" name="tipoInspecao" value="PERIODICA" checked><label for="ti1">INSPEÇÃO PERIÓDICA</label></div>
+            <div class="checkbox-item"><input type="checkbox" id="ti2" name="tipoInspecao" value="INICIAL"><label for="ti2">INSPEÇÃO INICIAL</label></div>
+            <div class="checkbox-item"><input type="checkbox" id="ti3" name="tipoInspecao" value="EXTRAORDINARIA"><label for="ti3">INSPEÇÃO EXTRAORDINÁRIA</label></div>
         </div>
-        
-        <div class="page-footer">Página 1 de 16 - Laudo Técnico de Vaso de Pressão</div>
+        <div class="page-footer">Página 1 de 16</div>
     </div>
 
-    <!-- PÁGINA 2 -->
     <div class="page" id="page-2">
-        <div class="page-header">
-            <strong>LAUDO TÉCNICO DE VASO DE PRESSÃO</strong> - TAG: <span id="tagHeader2"></span>
-        </div>
+        <div class="page-header"><strong>LAUDO TÉCNICO</strong> - TAG: <span id="tagHeader2"></span></div>
         <h2>SUMÁRIO</h2>
-        <table class="toc-table" style="border:none;">
-            <tr><td>EMPRESA CONTRATADA</td><td style="text-align:right;">4</td></tr>
-            <tr><td>EMPRESA CONTRATANTE</td><td style="text-align:right;">4</td></tr>
-            <tr><td>REFERÊNCIAS NORMATIVAS</td><td style="text-align:right;">4</td></tr>
-            <tr><td>IDENTIFICAÇÃO DO EQUIPAMENTO</td><td style="text-align:right;">5</td></tr>
-            <tr><td>CLASSIFICAÇÃO CONFORME NR13</td><td style="text-align:right;">5</td></tr>
-            <tr><td>TIPO DE EXAMES REALIZADOS</td><td style="text-align:right;">6</td></tr>
-            <tr><td>RELAÇÃO DA DOCUMENTAÇÃO DO EQUIPAMENTO</td><td style="text-align:right;">...</td></tr>
-            <tr><td>REGISTROS DOS EXAMES REALIZADOS</td><td style="text-align:right;">9</td></tr>
-            <tr><td>EXAME DE ENSAIO NÃO DESTRUTIVO</td><td style="text-align:right;">10</td></tr>
-            <tr><td>RELATÓRIO DE ENSAIO POR ULTRASSOM</td><td style="text-align:right;">11</td></tr>
-            <tr><td>MEMORIAL de CÁLCULO ASME VIII DIV. 1</td><td style="text-align:right;">12</td></tr>
-            <tr><td>INFORMAÇÕES PARA SELEÇÃO DE PARAMETROS</td><td style="text-align:right;">12</td></tr>
-            <tr><td>PARAMETROS PARA CÁLCULO PMTA</td><td style="text-align:right;">12</td></tr>
-            <tr><td>CÁLCULO PMTA</td><td style="text-align:right;">13</td></tr>
-            <tr><td>PMTA CALCULADA</td><td style="text-align:right;">14</td></tr>
-            <tr><td>RECOMENDAÇÕES</td><td style="text-align:right;">14</td></tr>
-            <tr><td>RESULTADOS</td><td style="text-align:right;">16</td></tr>
-            <tr><td>PARECER CONCLUSIVO</td><td style="text-align:right;">16</td></tr>
-            <tr><td>PRÓXIMA INSPEÇÃO</td><td style="text-align:right;">16</td></tr>
+        <table style="border:none;">
+            <tr><td>EMPRESA CONTRATADA</td><td align="right">4</td></tr>
+            <tr><td>EMPRESA CONTRATANTE</td><td align="right">4</td></tr>
+            <tr><td>REFERÊNCIAS NORMATIVAS</td><td align="right">4</td></tr>
+            <tr><td>IDENTIFICAÇÃO DO EQUIPAMENTO</td><td align="right">5</td></tr>
+            <tr><td>CLASSIFICAÇÃO NR13</td><td align="right">5</td></tr>
+            <tr><td>TIPO DE EXAMES</td><td align="right">6</td></tr>
+            <tr><td>REGISTROS DOS EXAMES</td><td align="right">9</td></tr>
+            <tr><td>ENSAIO NÃO DESTRUTIVO</td><td align="right">10</td></tr>
+            <tr><td>RELATÓRIO DE ULTRASSOM</td><td align="right">11</td></tr>
+            <tr><td>MEMORIAL DE CÁLCULO</td><td align="right">12</td></tr>
+            <tr><td>RESULTADOS E PARECER</td><td align="right">16</td></tr>
         </table>
-        <div class="page-footer">Página 2 de 16 - Laudo Técnico de Vaso de Pressão</div>
+        <div class="page-footer">Página 2 de 16</div>
     </div>
 
-    <!-- PÁGINA 3 -->
     <div class="page" id="page-3">
-        <div class="page-header">
-            <strong>LAUDO TÉCNICO DE VASO DE PRESSÃO</strong> - TAG: <span id="tagHeader3"></span>
-        </div>
+        <div class="page-header"><strong>LAUDO TÉCNICO</strong> - TAG: <span id="tagHeader3"></span></div>
         <h2>OBJETIVOS</h2>
-        <div class="full-text">O presente laudo busca apresentar os resultados da inspeção de integridade e segurança NR-13 de vasos sob pressão. Esta inspeção visa identificar, documentar e avaliar os potenciais riscos em relação aos parâmetros de operação dos vasos sob pressão, assim como suas conexões e tubulações associadas, a fim de garantir o acompanhamento da vida útil do equipamento, bem como atualização das pressões de trabalho para a situação estrutural avaliada, utilizando como base para análise a Norma Regulamentadora 13.
-
-A avaliação da integridade estrutural é necessária para que se possam estabelecer os parâmetros seguros de operação. Os resultados da avaliação da inspeção devem ser considerados para projetar, construir, modificar e ajustar a operação do vaso sob pressão. A seguir é detalhado o método para um processo iterativo de avaliação de risco para uma máquina:</div>
+        <div class="full-text">O presente laudo busca apresentar os resultados da inspeção de integridade e segurança NR-13 de vasos sob pressão...</div>
         <ul>
-            <li><div class="full-text">Avaliação visual do equipamento, incluindo o local de armazenamento, condições do ambiente e visualização dos aspectos físicos da estrutura;</div></li>
-            <li><div class="full-text">Medição da espessura do vaso, mediante teste de medição de espessura por ultrassom, com aparelho devidamente calibrado;</div></li>
-            <li><div class="full-text">Cálculo da PMTA atualizada, tendo em vista a possível redução de espessura, pelo processo de operação do vaso, calculando a nova pressão máxima de trabalho admissível para a situação de integridade avaliada;</div></li>
-            <li><div class="full-text">Eliminar os perigos ou reduzir os riscos, associados aos demais componentes que compõe os sistemas de pressurização, lubrificação e transporte de fluidos.</div></li>
+            <li>Avaliação visual do equipamento;</li>
+            <li>Medição da espessura do vaso (ultrassom);</li>
+            <li>Cálculo da PMTA atualizada;</li>
+            <li>Eliminar perigos e reduzir riscos.</li>
         </ul>
-        <div class="page-footer">Página 3 de 16 - Laudo Técnico de Vaso de Pressão</div>
+        <div class="page-footer">Página 3 de 16</div>
     </div>
-    
-    <!-- PÁGINA 4 -->
+
     <div class="page" id="page-4">
-        <div class="page-header">
-            <strong>LAUDO TÉCNICO DE VASO DE PRESSÃO</strong> - TAG: <span id="tagHeader4"></span>
-        </div>
+        <div class="page-header"><strong>LAUDO TÉCNICO</strong> - TAG: <span id="tagHeader4"></span></div>
         <h2>INFORMAÇÕES</h2>
         <h3>EMPRESA CONTRATADA</h3>
         <table>
-            <tr><th colspan="4">EMPRESA RESPONSÁVEL</th></tr>
-            <tr>
-                <td><strong>NOME FANTASIA</strong></td>
-                <td><strong>LM ENGENHARIA MECÂNICA</strong></td>
-                <td><strong>CIDADE</strong></td>
-                <td><strong>CURITIBA-PR</strong></td>
-            </tr>
-            <tr>
-                <td><strong>RAZÃO SOCIAL</strong></td>
-                <td><strong>LENIN MATHEUS COMINEZI ALMEIDA LTDA</strong></td>
-                <td><strong>CEP</strong></td>
-                <td><strong>80.035-110</strong></td>
-            </tr>
-            <tr>
-                <td><strong>CNPJ</strong></td>
-                <td><strong>49.695.944/0001-10</strong></td>
-                <td><strong>EMAIL</strong></td>
-                <td><strong>matheuscominezi1@gmail.com</strong></td>
-            </tr>
-            <tr>
-                <td><strong>ENDEREÇO</strong></td>
-                <td><strong>RUA BOM JESUS, 212, JUVEVÊ, CURITIBA-PR</strong></td>
-                <td><strong>FONE</strong></td>
-                <td><strong>(42) 9 9945-8479</strong></td>
-            </tr>
+            <tr><td colspan="4"><strong>LENIN MATHEUS COMINEZI ALMEIDA LTDA</strong></td></tr>
+            <tr><td>CNPJ: 49.695.944/0001-10</td><td>Fone: (42) 9 9945-8479</td></tr>
         </table>
-        
         <h3>EMPRESA CONTRATANTE</h3>
         <table>
-            <tr><th colspan="4">DADOS DO ESTABELECIMENTO</th></tr>
-            <tr>
-                <td><strong>NOME FANTASIA<br>RAZÃO SOCIAL</strong></td>
-                <td><input type="text" placeholder="Nome Fantasia"><br><input type="text" placeholder="Razão Social"></td>
-                <td><strong>CIDADE<br>CEP</strong></td>
-                <td><input type="text" placeholder="Cidade"><br><input type="text" placeholder="CEP"></td>
-            </tr>
-            <tr>
-                <td><strong>CNPJ</strong></td>
-                <td><input type="text" placeholder="CNPJ"></td>
-                <td><strong>EMAIL</strong></td>
-                <td><input type="email" placeholder="E-mail"></td>
-            </tr>
-            <tr>
-                <td><strong>ENDEREÇO</strong></td>
-                <td><input type="text" placeholder="Endereço Completo"></td>
-                <td><strong>FONE</strong></td>
-                <td><input type="tel" placeholder="Telefone"></td>
-            </tr>
+            <tr><td><strong>Nome Fantasia:</strong></td><td><input type="text" placeholder="Nome Fantasia"></td></tr>
+            <tr><td><strong>Razão Social:</strong></td><td><input type="text" placeholder="Razão Social"></td></tr>
+            <tr><td><strong>CNPJ:</strong></td><td><input type="text" placeholder="CNPJ"></td></tr>
+            <tr><td><strong>Endereço:</strong></td><td><input type="text" placeholder="Endereço Completo"></td></tr>
+            <tr><td><strong>Cidade/CEP:</strong></td><td><input type="text" placeholder="Cidade"> / <input type="text" placeholder="CEP"></td></tr>
+            <tr><td><strong>Email/Fone:</strong></td><td><input type="text" placeholder="E-mail"> / <input type="tel" placeholder="Telefone"></td></tr>
         </table>
-        
         <h3>REFERÊNCIAS NORMATIVAS</h3>
-        <div class="full-text">- NR-13 CALDEIRAS, VASOS DE PRESSÃO, TUBULAÇÕES E TANQUES METÁLICOS DE ARMAZENAMENTO;
-- ASME Code, Section VIII, Division 1;
-- ABNT NBR 15417:2007 - Vasos de pressão - Inspeção de segurança em serviço;
-- ABNT NBR 15824:2015 Ensaios não destrutivos Ultrassom Medição de espessura;
-- ABNT NBR 16450:2016 - Ensaios não destrutivos - Líquido penetrante;
-- ASME Code, Section V - Ensaio Não Destrutivo.</div>
-        <div class="page-footer">Página 4 de 16 - Laudo Técnico de Vaso de Pressão</div>
+        <div class="full-text">- NR-13; ASME Code Section VIII Div 1; NBR 15417...</div>
+        <div class="page-footer">Página 4 de 16</div>
     </div>
-    
-    <!-- PÁGINA 5 -->
+
     <div class="page" id="page-5">
-        <div class="page-header">
-            <strong>LAUDO TÉCNICO DE VASO DE PRESSÃO</strong> - TAG: <span id="tagHeader5"></span>
-        </div>
-        <h2>IDENTIFICAÇÃO DO EQUIPAMENTO</h2>
-        <h3>IDENTIFICAÇÃO DO EQUIPAMENTO</h3>
+        <div class="page-header"><strong>LAUDO TÉCNICO</strong> - TAG: <span id="tagHeader5"></span></div>
+        <h2>IDENTIFICAÇÃO</h2>
         <table>
-            <tr><th colspan="4">EQUIPAMENTO</th></tr>
-            <tr>
-                <td><strong>TAG</strong></td>
-                <td><input type="text" id="tagEquipamento" placeholder="TAG do Equipamento"></td>
-                <td><strong>CATEGORIA</strong></td>
-                <td><input type="text" placeholder="Categoria"></td>
-            </tr>
-            <tr>
-                <td><strong>Nº DE SÉRIE</strong></td>
-                <td><input type="text" placeholder="Número de Série"></td>
-                <td><strong>PMTA FABRICANTE</strong></td>
-                <td><input type="text" placeholder="PMTA do Fabricante"></td>
-            </tr>
-            <tr>
-                <td><strong>MODELO</strong></td>
-                <td><input type="text" placeholder="Modelo"></td>
-                <td><strong>PRESSÃO TESTE HIDROSTÁTICO</strong></td>
-                <td><input type="text" placeholder="Pressão de Teste"></td>
-            </tr>
-            <tr>
-                <td><strong>FABRICANTE</strong></td>
-                <td><input type="text" placeholder="Fabricante"></td>
-                <td><strong>FLUIDO DE SERVIÇO</strong></td>
-                <td><input type="text" placeholder="Fluido de Serviço"></td>
-            </tr>
-            <tr>
-                <td><strong>ANO DE FABRICAÇÃO</strong></td>
-                <td><input type="text" placeholder="Ano de Fabricação"></td>
-                <td><strong>VOLUME</strong></td>
-                <td><input type="text" placeholder="Volume"></td>
-            </tr>
-            <tr>
-                <td><strong>TEMP. MÁX DE PROJETO</strong></td>
-                <td><input type="text" placeholder="Temperatura Máxima"></td>
-                <td><strong>SETOR</strong></td>
-                <td><input type="text" placeholder="Setor"></td>
-            </tr>
-            <tr>
-                <td><strong>CÓDIGO DE CONSTRUÇÃO</strong></td>
-                <td><input type="text" placeholder="Código de Construção"></td>
-                <td><strong>TIPO DE VASO DE PRESSÃO</strong></td>
-                <td><input type="text" placeholder="Tipo de Vaso"></td>
-            </tr>
+            <tr><td><strong>TAG</strong></td><td><input type="text" id="tagEquipamento" placeholder="TAG"></td><td><strong>Categoria</strong></td><td><input type="text" placeholder="Categoria"></td></tr>
+            <tr><td><strong>Nº Série</strong></td><td><input type="text" placeholder="Número de Série"></td><td><strong>PMTA Fabr.</strong></td><td><input type="text" placeholder="PMTA do Fabricante"></td></tr>
+            <tr><td><strong>Modelo</strong></td><td><input type="text" placeholder="Modelo"></td><td><strong>Pressão Teste</strong></td><td><input type="text" placeholder="Pressão de Teste"></td></tr>
+            <tr><td><strong>Fabricante</strong></td><td><input type="text" placeholder="Fabricante"></td><td><strong>Fluido</strong></td><td><input type="text" placeholder="Fluido de Serviço"></td></tr>
+            <tr><td><strong>Ano Fabr.</strong></td><td><input type="text" placeholder="Ano de Fabricação"></td><td><strong>Volume</strong></td><td><input type="text" placeholder="Volume"></td></tr>
+            <tr><td><strong>Temp. Máx</strong></td><td><input type="text" placeholder="Temperatura Máxima"></td><td><strong>Setor</strong></td><td><input type="text" placeholder="Setor"></td></tr>
+            <tr><td><strong>Cód. Const.</strong></td><td><input type="text" placeholder="Código de Construção"></td><td><strong>Tipo Vaso</strong></td><td><input type="text" placeholder="Tipo de Vaso"></td></tr>
         </table>
-        
-        <h3>CLASSIFICAÇÃO CONFORME NR13</h3>
-        <table>
-            <tr>
-                <th rowspan="2">Classe do Fluido</th>
-                <th colspan="5">Grupo Potencial de Risco</th>
-            </tr>
-            <tr><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th></tr>
-            <tr><td></td><td colspan="5" class="center"><strong>Categoria do Vaso</strong></td></tr>
-            <tr><td><strong>"A"</strong> ...</td><td>I</td><td>II</td><td>III</td><td>III</td><td>IV</td></tr>
-            <tr><td><strong>"B"</strong> ...</td><td>I</td><td>II</td><td>III</td><td>IV</td><td>IV</td></tr>
-            <tr><td><strong>"C"</strong> ...</td><td>I</td><td>II</td><td>III</td><td>IV</td><td>V</td></tr>
-            <tr><td><strong>"D"</strong> ...</td><td>II</td><td>III</td><td>IV</td><td>V</td><td>V</td></tr>
-        </table>
-        <p><strong>Descrição:</strong> <input type="text" placeholder="Descrição da classificação"></p>
-        <div class="page-footer">Página 5 de 16 - Laudo Técnico de Vaso de Pressão</div>
+        <h3>CLASSIFICAÇÃO NR13</h3>
+        <div class="full-text">Categoria do Vaso conforme tabela NR-13.</div>
+        <div class="page-footer">Página 5 de 16</div>
     </div>
 
-    <!-- PÁGINA 6 -->
     <div class="page" id="page-6">
-        <div class="page-header">
-            <strong>LAUDO TÉCNICO DE VASO DE PRESSÃO</strong> - TAG: <span id="tagHeader6"></span>
+        <div class="page-header"><strong>LAUDO TÉCNICO</strong> - TAG: <span id="tagHeader6"></span></div>
+        <h2>TIPO DE EXAMES</h2>
+        <div class="full-text">
+        - Exame Visual Externo<br>
+        - Medição de Espessura (Ultrassom)<br>
+        - Mapeamento de Corrosão<br>
+        - Ultrassom (Descontinuidades)
         </div>
-        <h2>TIPO DE EXAMES REALIZADOS</h2>
-        <div class="full-text">EXAME VISUAL EXTERNO
-END - MEDIÇÃO DE ESPESSURA (ULTRASSOM ESTRUTURAL)
-END - MAPEAMENTO DE CORROSÃO
-END - ULTRASSOM (DESCONTINUIDADES SOLDAGENS)</div>
-        <h3>DESCRITIVO DOS EXAMES</h3>
-        <p><strong>Exame Visual Externo:</strong></p>
-        <div class="full-text">O exame visual externo constitui a primeira etapa de avaliação e tem como objetivo identificar indícios aparentes de degradação no equipamento. Nessa fase, são verificadas as condições gerais da superfície externa, buscando-se sinais de corrosão, amassamentos, deformações, trincas visíveis e possíveis vazamentos. Também são avaliados os suportes, bases, ancoragens e reforços estruturais, bem como a integridade de pinturas, revestimentos e isolamentos térmicos, com atenção especial à possibilidade de corrosão sob isolamento (CUI). Além disso, conferem-se os dispositivos de segurança, como válvulas de alívio e manômetros, e a legibilidade da placa de identificação, conforme exigido pela norma.</div>
-        
-        <p><strong>END - Medição de espessura (Ultrassom estrutural):</strong></p>
-        <div class="full-text">O ensaio de ultrassom para medição de espessura, que permite determinar a espessura remanescente das paredes do vaso de pressão, caldeira ou tubulação. O procedimento é realizado em pontos estratégicos definidos previamente em croqui, considerando áreas críticas de desgaste ou de maior exposição ao fluido de processo. As medidas obtidas são comparadas com os valores originais de projeto e com a espessura mínima admissível calculada, assegurando que o equipamento ainda apresenta condições adequadas para operação segura.</div>
-        
-        <p><strong>END - Mapeamento de corrosão</strong></p>
-        <div class="full-text">O mapeamento de corrosão, também por meio de técnicas ultrassônicas. Esse exame permite identificar a extensão e a profundidade da perda de material, caracterizando ataques localizados como pites ou corrosão por fresta. As informações são registradas em forma de mapa ou croqui, permitindo o acompanhamento da evolução da corrosão ao longo do tempo e a definição de ações de reparo, substituição ou aumento da frequência de monitoramento.</div>
-        
-        <p><strong>END - Ultrassom (descontinuidades de soldagens)</strong></p>
-        <div class="full-text">O ultrassom aplicado à detecção de descontinuidades em soldas. Esse procedimento é direcionado às juntas soldadas, que representam pontos críticos do equipamento. O ensaio possibilita a identificação de trincas internas, falta de fusão, inclusões não metálicas, porosidade e outras descontinuidades que não são visíveis externamente. Las indicações obtidas são classificadas segundo critérios de aceitação estabelecidos em códigos de projeto e normas técnicas, como ASME ou API. Caso sejam encontradas falhas relevantes, define-se a necessidade de reparos imediatos ou de monitoramento contínuo.</div>
-        <div class="page-footer">Página 6 de 16 - Laudo Técnico de Vaso de Pressão</div>
+        <div class="page-footer">Página 6 de 16</div>
     </div>
-    
-    <!-- PÁGINA 7 -->
-    <div class="page" id="page-7">
-        <div class="page-header">
-            <strong>LAUDO TÉCNICO DE VASO DE PRESSÃO</strong> - TAG: <span id="tagHeader7"></span>
-        </div>
-        <table>
-            <tr><th colspan="3">EXAME VISUAL EXTERNO</th></tr>
-            <tr><th>ITEM</th><th>SITUAÇÃO</th><th>OBSERVAÇÕES</th></tr>
-            <tr>
-                <td>Superfície externa sem trincas, amassados ou deformações:<br>Ausência de vazamentos:</td>
-                <td><input type="text" placeholder="Situação"><br><input type="text" placeholder="Situação"></td>
-                <td><input type="text" placeholder="Observações"><br><input type="text" placeholder="Observações"></td>
-            </tr>
-            <tr>
-                <td>Estado da pintura e revestimento satisfatório:<br>Isolamento térmico íntegro:</td>
-                <td><input type="text" placeholder="Situação"><br><input type="text" placeholder="Situação"></td>
-                <td><input type="text" placeholder="Observações"><br><input type="text" placeholder="Observações"></td>
-            </tr>
-            <tr>
-                <td>Suporte, bases e ancoragens em bom estado:</td>
-                <td><input type="text" placeholder="Situação"></td>
-                <td><input type="text" placeholder="Observações"></td>
-            </tr>
-            <tr>
-                <td>Acessórios de segurança:</td>
-                <td><input type="text" placeholder="Situação"></td>
-                <td><input type="text" placeholder="Observações"></td>
-            </tr>
-            <tr>
-                <td>Placa de identificação:</td>
-                <td><input type="text" placeholder="Situação"></td>
-                <td><input type="text" placeholder="Observações"></td>
-            </tr>
-        </table>
-        
-        <table>
-            <tr><th colspan="3">END - MEDIÇÃO DE ESPESSURA (ULTRASSOM ESTRUTURAL)</th></tr>
-            <tr><th>ITEM</th><th>SITUAÇÃO</th><th>OBSERVAÇÕES</th></tr>
-            <tr>
-                <td>Medição realizada nos pontos definidos em croqui:</td>
-                <td><input type="text" placeholder="Situação"></td>
-                <td><input type="text" placeholder="Observações"></td>
-            </tr>
-            <tr>
-                <td>Valores comparados com a espessura mínima admissível:</td>
-                <td><input type="text" placeholder="Situação"></td>
-                <td><input type="text" placeholder="Observações"></td>
-            </tr>
-            <tr>
-                <td>Registro dos valores em laudo técnico:</td>
-                <td><input type="text" placeholder="Situação"></td>
-                <td><input type="text" placeholder="Observações"></td>
-            </tr>
-        </table>
-        
-        <table>
-            <tr><th colspan="3">END - MAPEAMENTO DE CORROSÃO</th></tr>
-            <tr><th>ITEM</th><th>SITUAÇÃO</th><th>OBSERVAÇÕES</th></tr>
-            <tr>
-                <td>Registro das áreas com perda de espessura localizada:<br>Indicação da taxa de corrosão estimada:<br>Definição de plano de reparo ou monitoramento:</td>
-                <td><input type="text" placeholder="Situação"><br><input type="text" placeholder="Situação"><br><input type="text" placeholder="Situação"></td>
-                <td><input type="text" placeholder="Observações"><br><input type="text" placeholder="Observações"><br><input type="text" placeholder="Observações"></td>
-            </tr>
-        </table>
 
+    <div class="page" id="page-7">
+        <div class="page-header"><strong>LAUDO TÉCNICO</strong> - TAG: <span id="tagHeader7"></span></div>
+        <h3>CHECKLIST DE INSPEÇÃO</h3>
         <table>
-            <tr><th colspan="3">END - ULTRASSOM (DESCONTINUIDADES DE SOLDAGENS)</th></tr>
-            <tr><th>ITEM</th><th>SITUAÇÃO</th><th>OBSERVAÇÕES</th></tr>
-            <tr>
-                <td>Inspeção realizada em todas as juntas críticas:</td>
-                <td><input type="text" placeholder="Situação"></td>
-                <td><input type="text" placeholder="Observações"></td>
-            </tr>
-            <tr>
-                <td>Registro de indicações de descontinuidades:</td>
-                <td><input type="text" placeholder="Situação"></td>
-                <td><input type="text" placeholder="Observações"></td>
-            </tr>
-            <tr>
-                <td>Avaliação conforme código ASME:</td>
-                <td><input type="text" placeholder="Situação"></td>
-                <td><input type="text" placeholder="Observações"></td>
-            </tr>
-            <tr>
-                <td>Definição de ações corretivas (se necessário):</td>
-                <td><input type="text" placeholder="Situação"></td>
-                <td><input type="text" placeholder="Observações"></td>
-            </tr>
+            <tr><th>ITEM</th><th>SITUAÇÃO</th><th>OBS</th></tr>
+            <tr><td>Superfície externa</td><td><input type="text" placeholder="Situação"></td><td><input type="text" placeholder="Obs"></td></tr>
+            <tr><td>Pintura/Revestimento</td><td><input type="text" placeholder="Situação"></td><td><input type="text" placeholder="Obs"></td></tr>
+            <tr><td>Suportes/Bases</td><td><input type="text" placeholder="Situação"></td><td><input type="text" placeholder="Obs"></td></tr>
+            <tr><td>Válvulas/Manômetros</td><td><input type="text" placeholder="Situação"></td><td><input type="text" placeholder="Obs"></td></tr>
+            <tr><td>Placa Identificação</td><td><input type="text" placeholder="Situação"></td><td><input type="text" placeholder="Obs"></td></tr>
         </table>
-        
-        <div class="page-footer">Página 7 de 16 - Laudo Técnico de Vaso de Pressão</div>
+        <div class="page-footer">Página 7 de 16</div>
     </div>
-    
-    <!-- PÁGINA 8 -->
+
     <div class="page" id="page-8">
-        <div class="page-header">
-            <strong>LAUDO TÉCNICO DE VASO DE PRESSÃO</strong> - TAG: <span id="tagHeader8"></span>
-        </div>
-        
+        <div class="page-header"><strong>LAUDO TÉCNICO</strong> - TAG: <span id="tagHeader8"></span></div>
         <div class="image-uploader">
-            <img id="imgPlaca" class="image-preview" alt="Placa de Identificação">
-            <span class="placeholder-text">
-                <label for="file_gallery_imgPlaca" class="upload-btn">Abrir Arquivos</label>
-                <label for="file_camera_imgPlaca" class="upload-btn camera-btn">📷 Tirar Foto</label>
-            </span>
+            <img id="imgPlaca" class="image-preview" alt="Placa">
+            <span class="placeholder-text"><label for="file_gallery_imgPlaca" class="upload-btn">Placa (Foto)</label></span>
             <input type="file" accept="image/*" id="file_gallery_imgPlaca" class="hidden-input">
-            <input type="file" accept="image/*;capture=camera" id="file_camera_imgPlaca" class="hidden-input">
         </div>
-        
         <h3>Dispositivos de Segurança</h3>
         <table>
-            <tr><th>Item</th><th>Descrição</th><th>Dados técnicos</th><th>Foto</th></tr>
             <tr>
-                <td>Válvula de segurança</td>
-                <td><input type="text" placeholder="Descrição"></td>
-                <td><div class="full-text">Pressão de ajuste: 
-Pressão de acumulo: 
-Pressão de fechamento: 
-Norma: </div></td>
+                <td>Válvula</td>
+                <td><input type="text" placeholder="Dados"></td>
                 <td>
-                    <div class="image-uploader" style="min-height: 80px; margin:0;">
-                        <img id="imgValvula" class="image-preview" alt="Foto Válvula">
-                        <span class="placeholder-text" style="font-size: 9pt;">
-                            <label for="file_gallery_imgValvula" class="upload-btn-small">Arquivo</label>
-                            <label for="file_camera_imgValvula" class="upload-btn-small camera-btn">📷</label>
-                        </span>
-                        <input type="file" accept="image/*" id="file_gallery_imgValvula" class="hidden-input">
-                        <input type="file" accept="image/*;capture=camera" id="file_camera_imgValvula" class="hidden-input">
+                    <div class="image-uploader" style="min-height:60px; margin:0; padding:5px;">
+                        <img id="imgValvula" class="image-preview" style="max-height:60px; display:none;">
+                        <label for="fg_imgValvula" class="upload-btn-small">📷</label>
+                        <input type="file" accept="image/*" id="fg_imgValvula" class="hidden-input" onchange="handleImageUpload(event, 'imgValvula')">
                     </div>
                 </td>
             </tr>
             <tr>
                 <td>Manômetro</td>
-                <td><input type="text" placeholder="Descrição"></td>
-                <td><input type="text" placeholder="Dados técnicos"></td>
+                <td><input type="text" placeholder="Dados"></td>
                 <td>
-                    <div class="image-uploader" style="min-height: 80px; margin:0;">
-                        <img id="imgManometro" class="image-preview" alt="Foto Manômetro">
-                        <span class="placeholder-text" style="font-size: 9pt;">
-                            <label for="file_gallery_imgManometro" class="upload-btn-small">Arquivo</label>
-                            <label for="file_camera_imgManometro" class="upload-btn-small camera-btn">📷</label>
-                        </span>
-                        <input type="file" accept="image/*" id="file_gallery_imgManometro" class="hidden-input">
-                        <input type="file" accept="image/*;capture=camera" id="file_camera_imgManometro" class="hidden-input">
+                    <div class="image-uploader" style="min-height:60px; margin:0; padding:5px;">
+                        <img id="imgManometro" class="image-preview" style="max-height:60px; display:none;">
+                        <label for="fg_imgManometro" class="upload-btn-small">📷</label>
+                        <input type="file" accept="image/*" id="fg_imgManometro" class="hidden-input" onchange="handleImageUpload(event, 'imgManometro')">
                     </div>
                 </td>
             </tr>
         </table>
-        
-        <div class="page-footer">Página 8 de 16 - Laudo Técnico de Vaso de Pressão</div>
+        <div class="page-footer">Página 8 de 16</div>
     </div>
-    
-    <!-- PÁGINA 9 -->
-    <div class="page" id="page-9">
-        <div class="page-header">
-            <strong>LAUDO TÉCNICO DE VASO DE PRESSÃO</strong> - TAG: <span id="tagHeader9"></span>
-        </div>
-        <h2>REGISTROS DOS EXAMES REALIZADOS</h2>
-        
-        <table style="border:none; text-align:center;">
-            <tr>
-                <td style="border:none;">
-                    <div class="image-uploader" style="min-height: 100px;">
-                        <img id="imgReg1" class="image-preview" alt="Registro 1">
-                        <span class="placeholder-text" style="font-size: 9pt;">
-                            <label for="file_gallery_imgReg1" class="upload-btn-small">Arquivo</label>
-                            <label for="file_camera_imgReg1" class="upload-btn-small camera-btn">📷</label>
-                        </span>
-                        <input type="file" accept="image/*" id="file_gallery_imgReg1" class="hidden-input">
-                        <input type="file" accept="image/*;capture=camera" id="file_camera_imgReg1" class="hidden-input">
-                    </div>
-                    <p>EXAME DE VISUAL EXTERNO</p>
-                </td>
-                <td style="border:none;">
-                    <div class="image-uploader" style="min-height: 100px;">
-                        <img id="imgReg2" class="image-preview" alt="Registro 2">
-                        <span class="placeholder-text" style="font-size: 9pt;">
-                            <label for="file_gallery_imgReg2" class="upload-btn-small">Arquivo</label>
-                            <label for="file_camera_imgReg2" class="upload-btn-small camera-btn">📷</label>
-                        </span>
-                        <input type="file" accept="image/*" id="file_gallery_imgReg2" class="hidden-input">
-                        <input type="file" accept="image/*;capture=camera" id="file_camera_imgReg2" class="hidden-input">
-                    </div>
-                    <p>MAPEAMENTO DE CORROSÃO</p>
-                </td>
-                <td style="border:none;">
-                    <div class="image-uploader" style="min-height: 100px;">
-                        <img id="imgReg3" class="image-preview" alt="Registro 3">
-                        <span class="placeholder-text" style="font-size: 9pt;">
-                            <label for="file_gallery_imgReg3" class="upload-btn-small">Arquivo</label>
-                            <label for="file_camera_imgReg3" class="upload-btn-small camera-btn">📷</label>
-                        </span>
-                        <input type="file" accept="image/*" id="file_gallery_imgReg3" class="hidden-input">
-                        <input type="file" accept="image/*;capture=camera" id="file_camera_imgReg3" class="hidden-input">
-                    </div>
-                    <p>PINTURA / PLACA</p>
-                </td>
-            </tr>
-            <tr>
-                <td style="border:none;">
-                    <div class="image-uploader" style="min-height: 100px;">
-                        <img id="imgReg4" class="image-preview" alt="Registro 4">
-                        <span class="placeholder-text" style="font-size: 9pt;">
-                            <label for="file_gallery_imgReg4" class="upload-btn-small">Arquivo</label>
-                            <label for="file_camera_imgReg4" class="upload-btn-small camera-btn">📷</label>
-                        </span>
-                        <input type="file" accept="image/*" id="file_gallery_imgReg4" class="hidden-input">
-                        <input type="file" accept="image/*;capture=camera" id="file_camera_imgReg4" class="hidden-input">
-                    </div>
-                    <p>EXAME VISUAL MANOMETRO</p>
-                </td>
-                <td style="border:none;">
-                    <div class="image-uploader" style="min-height: 100px;">
-                        <img id="imgReg5" class="image-preview" alt="Registro 5">
-                        <span class="placeholder-text" style="font-size: 9pt;">
-                            <label for="file_gallery_imgReg5" class="upload-btn-small">Arquivo</label>
-                            <label for="file_camera_imgReg5" class="upload-btn-small camera-btn">📷</label>
-                        </span>
-                        <input type="file" accept="image/*" id="file_gallery_imgReg5" class="hidden-input">
-                        <input type="file" accept="image/*;capture=camera" id="file_camera_imgReg5" class="hidden-input">
-                    </div>
-                    <p>ULTRASSOM CORPO DO VASO</p>
-                </td>
-                <td style="border:none;">
-                    <div class="image-uploader" style="min-height: 100px;">
-                        <img id="imgReg6" class="image-preview" alt="Registro 6">
-                        <span class="placeholder-text" style="font-size: 9pt;">
-                            <label for="file_gallery_imgReg6" class="upload-btn-small">Arquivo</label>
-                            <label for="file_camera_imgReg6" class="upload-btn-small camera-btn">📷</label>
-                        </span>
-                        <input type="file" accept="image/*" id="file_gallery_imgReg6" class="hidden-input">
-                        <input type="file" accept="image/*;capture=camera" id="file_camera_imgReg6" class="hidden-input">
-                    </div>
-                    <p>ULTRASSOM TAMPO DO VASO</p>
-                </td>
-            </tr>
-        </table>
-        
-        <h3 style="text-align:center; border:none; background-color:#eee; padding: 5px;">RESULTADOS DA INSPEÇÃO REALIZADA</h3>
-        <div class="full-text">Vaso em boas condições de operação e trabalho.
-- Apresenta em boas condições os dispositivos de segurança.</div>
-        <div class="page-footer">Página 9 de 16 - Laudo Técnico de Vaso de Pressão</div>
-    </div>
-    
-    <!-- PÁGINA 10 -->
-    <div class="page" id="page-10">
-        <div class="page-header">
-            <strong>LAUDO TÉCNICO DE VASO DE PRESSÃO</strong> - TAG: <span id="tagHeader10"></span>
-        </div>
-        
-        <div style="display: flex; justify-content: space-around; margin-bottom: 20px;">
-            <div class="image-uploader" style="min-height: 120px; width: 30%;">
-                <img id="imgDiagramaCorpo" class="image-preview" alt="Diagrama Corpo">
-                <span class="placeholder-text" style="font-size: 9pt;">
-                    <label for="file_gallery_imgDiagramaCorpo" class="upload-btn-small">Arquivo</label>
-                    <label for="file_camera_imgDiagramaCorpo" class="upload-btn-small camera-btn">📷</label>
-                </span>
-                <input type="file" accept="image/*" id="file_gallery_imgDiagramaCorpo" class="hidden-input">
-                <input type="file" accept="image/*;capture=camera" id="file_camera_imgDiagramaCorpo" class="hidden-input">
-            </div>
-            <div class="image-uploader" style="min-height: 120px; width: 30%;">
-                <img id="imgDiagramaEsq" class="image-preview" alt="Diagrama Tampo Esq.">
-                <span class="placeholder-text" style="font-size: 9pt;">
-                    <label for="file_gallery_imgDiagramaEsq" class="upload-btn-small">Arquivo</label>
-                    <label for="file_camera_imgDiagramaEsq" class="upload-btn-small camera-btn">📷</label>
-                </span>
-                <input type="file" accept="image/*" id="file_gallery_imgDiagramaEsq" class="hidden-input">
-                <input type="file" accept="image/*;capture=camera" id="file_camera_imgDiagramaEsq" class="hidden-input">
-            </div>
-            <div class="image-uploader" style="min-height: 120px; width: 30%;">
-                <img id="imgDiagramaDir" class="image-preview" alt="Diagrama Tampo Dir.">
-                <span class="placeholder-text" style="font-size: 9pt;">
-                    <label for="file_gallery_imgDiagramaDir" class="upload-btn-small">Arquivo</label>
-                    <label for="file_camera_imgDiagramaDir" class="upload-btn-small camera-btn">📷</label>
-                </span>
-                <input type="file" accept="image/*" id="file_gallery_imgDiagramaDir" class="hidden-input">
-                <input type="file" accept="image/*;capture=camera" id="file_camera_imgDiagramaDir" class="hidden-input">
-            </div>
-        </div>
-        
-        <h2>ENSAIO NÃO DESTRUTIVO – END</h2>
-        <h3>EXAME DE ENSAIO NÃO DESTRUTIVO</h3>
-        <p><strong>INSTRUMENTO:</strong> <input type="text" placeholder="Instrumento utilizado"></p>
 
-        <table style="width: 100%; margin: 0 auto;">
-            <thead>
-                <tr>
-                    <th>PONTO</th>
-                    <th>ESPESSURA (mm)</th>
-                    <th>FOTO DA LEITURA</th>
-                    <th>AÇÃO</th>
-                </tr>
-            </thead>
+    <div class="page" id="page-9">
+        <div class="page-header"><strong>LAUDO TÉCNICO</strong> - TAG: <span id="tagHeader9"></span></div>
+        <h2>REGISTROS FOTOGRÁFICOS</h2>
+        <table style="border:none;">
+            <tr>
+                <td style="border:none; padding:2px;">
+                   <div class="image-uploader" style="min-height:80px; margin:5px 0;"><img id="imgReg1" class="image-preview"><label for="f_imgReg1" class="upload-btn-small">Foto 1</label><input type="file" id="f_imgReg1" class="hidden-input" onchange="handleImageUpload(event,'imgReg1')"></div>
+                </td>
+                <td style="border:none; padding:2px;">
+                   <div class="image-uploader" style="min-height:80px; margin:5px 0;"><img id="imgReg2" class="image-preview"><label for="f_imgReg2" class="upload-btn-small">Foto 2</label><input type="file" id="f_imgReg2" class="hidden-input" onchange="handleImageUpload(event,'imgReg2')"></div>
+                </td>
+            </tr>
+            <tr>
+                <td style="border:none; padding:2px;">
+                   <div class="image-uploader" style="min-height:80px; margin:5px 0;"><img id="imgReg3" class="image-preview"><label for="f_imgReg3" class="upload-btn-small">Foto 3</label><input type="file" id="f_imgReg3" class="hidden-input" onchange="handleImageUpload(event,'imgReg3')"></div>
+                </td>
+                <td style="border:none; padding:2px;">
+                   <div class="image-uploader" style="min-height:80px; margin:5px 0;"><img id="imgReg4" class="image-preview"><label for="f_imgReg4" class="upload-btn-small">Foto 4</label><input type="file" id="f_imgReg4" class="hidden-input" onchange="handleImageUpload(event,'imgReg4')"></div>
+                </td>
+            </tr>
+        </table>
+        <div class="page-footer">Página 9 de 16</div>
+    </div>
+
+    <div class="page" id="page-10">
+        <div class="page-header"><strong>LAUDO TÉCNICO</strong> - TAG: <span id="tagHeader10"></span></div>
+        <h2>MEDIÇÃO DE ESPESSURA (ME)</h2>
+        <div style="display:flex; gap:5px;">
+            <div class="image-uploader" style="flex:1; min-height:80px;"><img id="imgDiagramaCorpo" class="image-preview"><label for="f_imgDiagramaCorpo" class="upload-btn-small">Corpo</label><input type="file" id="f_imgDiagramaCorpo" class="hidden-input" onchange="handleImageUpload(event,'imgDiagramaCorpo')"></div>
+            <div class="image-uploader" style="flex:1; min-height:80px;"><img id="imgDiagramaEsq" class="image-preview"><label for="f_imgDiagramaEsq" class="upload-btn-small">T.Esq</label><input type="file" id="f_imgDiagramaEsq" class="hidden-input" onchange="handleImageUpload(event,'imgDiagramaEsq')"></div>
+            <div class="image-uploader" style="flex:1; min-height:80px;"><img id="imgDiagramaDir" class="image-preview"><label for="f_imgDiagramaDir" class="upload-btn-small">T.Dir</label><input type="file" id="f_imgDiagramaDir" class="hidden-input" onchange="handleImageUpload(event,'imgDiagramaDir')"></div>
+        </div>
+        
+        <table style="width:100%;">
+            <thead><tr><th>PONTO</th><th>ESPESSURA (mm)</th><th>FOTO</th><th>AÇÃO</th></tr></thead>
             <tbody id="measurementTableBody">
-                <tr>
-                    <td><input type="text" placeholder="Ponto"></td>
-                    <td><input type="number" step="0.1" placeholder="0.0"></td>
-                    <td>
-                        <div class="image-uploader" style="min-height: 50px; margin:0; padding: 5px;">
-                            <img id="medPhoto1" class="image-preview" alt="Foto Leitura" style="max-height: 50px;">
-                            <span class="placeholder-text" style="font-size: 9pt;">
-                                <label for="file_gallery_medPhoto1" class="upload-btn-small">Arquivo</label>
-                                <label for="file_camera_medPhoto1" class="upload-btn-small camera-btn">📷</label>
-                            </span>
-                            <input type="file" accept="image/*" id="file_gallery_medPhoto1" class="hidden-input">
-                            <input type="file" accept="image/*;capture=camera" id="file_camera_medPhoto1" class="hidden-input">
-                        </div>
-                    </td>
-                    <td class="center"><button type="button" class="remove-row-btn">Remover</button></td>
-                </tr>
-            </tbody>
+                </tbody>
         </table>
-        <button type="button" class="add-row-btn" style="margin-top: 10px;">Adicionar Ponto</button>
+        <button type="button" class="add-row-btn" style="margin-top:10px; width:100%; padding:10px;">+ Adicionar Ponto</button>
         
-        <!-- CHECKBOXES APROVADO/REPROVADO -->
-        <div class="checkbox-group" style="margin-top: 15px;">
-            <div class="checkbox-item">
-                <input type="checkbox" id="aprovado" name="resultado" value="APROVADO" checked>
-                <label for="aprovado" class="checkbox-label">APROVADO</label>
-            </div>
-            <div class="checkbox-item">
-                <input type="checkbox" id="reprovado" name="resultado" value="REPROVADO">
-                <label for="reprovado" class="checkbox-label">REPROVADO</label>
-            </div>
+        <div class="checkbox-group" style="margin-top:15px;">
+            <div class="checkbox-item"><input type="checkbox" id="aprovado" name="resultado" value="APROVADO" checked><label for="aprovado">APROVADO</label></div>
+            <div class="checkbox-item"><input type="checkbox" id="reprovado" name="resultado" value="REPROVADO"><label for="reprovado">REPROVADO</label></div>
         </div>
-        
-        <p><strong>OBSERVAÇÕES</strong></p>
-        <div class="full-text">O vaso sob pressão possui espessuras maiores que as exigidas para o nível de pressão de operação e PMTA, estando em conformidade com o ensaio de segurança estrutural.</div>
-        
-        <div class="page-footer">Página 10 de 16 - Laudo Técnico de Vaso de Pressão</div>
+        <div class="page-footer">Página 10 de 16</div>
     </div>
-    
-    <!-- PÁGINA 11 -->
+
     <div class="page" id="page-11">
-        <div class="page-header">
-            <strong>LAUDO TÉCNICO DE VASO DE PRESSÃO</strong> - TAG: <span id="tagHeader11"></span>
+        <div class="page-header"><strong>LAUDO TÉCNICO</strong> - TAG: <span id="tagHeader11"></span></div>
+        <h3>RELATÓRIO DE ULTRASSOM</h3>
+        <div class="checkbox-group">
+            <div class="checkbox-item"><input type="checkbox" name="superficie" value="LAMINADO" checked><label>LAMINADO</label></div>
+            <div class="checkbox-item"><input type="checkbox" name="superficie" value="SOLDADO"><label>SOLDADO</label></div>
         </div>
-        
-        <h3>RELATÓRIO DE ENSAIO POR ULTRASSOM</h3>
-        <table>
-            <tr>
-                <td><strong>CLIENTE:</strong><br><input type="text" placeholder="Cliente"></td>
-                <td><strong>PROJETO:</strong><br><input type="text" placeholder="Projeto"></td>
-            </tr>
-            <tr>
-                <td><strong>EQUIPAMENTO:</strong><br><input type="text" placeholder="Equipamento"></td>
-                <td><strong>NORMA:</strong><br><input type="text" placeholder="Norma"></td>
-            </tr>
-            <tr>
-                <td><strong>PROCEDIMENTO /REV:</strong><br><input type="text" placeholder="Procedimento/Revisão"></td>
-                <td><strong>CRITÉRIO DE ACEITAÇÃO:</strong><br><input type="text" placeholder="Critério de Aceitação"></td>
-            </tr>
-            <tr>
-                <td><strong>MATERIAL/ESPESSURA:</strong><br><input type="text" placeholder="Material/Espessura"></td>
-                <td><strong>ESTADO DA SUPERFÍCIE</strong><br>
-                    <div class="checkbox-group">
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="superf1" name="superficie" value="FORJADO">
-                            <label for="superf1" class="checkbox-label">FORJADO</label>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="superf2" name="superficie" value="ESMERILHADA">
-                            <label for="superf2" class="checkbox-label">ESMERILHADA</label>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="superf3" name="superficie" value="LAMINADO">
-                            <label for="superf3" class="checkbox-label">LAMINADO</label>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="superf4" name="superficie" value="ESCOVADA" checked>
-                            <label for="superf4" class="checkbox-label">ESCOVADA</label>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="superf5" name="superficie" value="FUNDIDO">
-                            <label for="superf5" class="checkbox-label">FUNDIDO</label>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="superf6" name="superficie" value="USINADA">
-                            <label for="superf6" class="checkbox-label">USINADA</label>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="superf7" name="superficie" value="SOLDADO" checked>
-                            <label for="superf7" class="checkbox-label">SOLDADO</label>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="superf8" name="superficie" value="COMO_SOLDADA">
-                            <label for="superf8" class="checkbox-label">COMO SOLDADA</label>
-                        </div>
-                    </div>
-                </td>
-            </tr>
-            <tr>
-                <td><strong>LOCAL EXAMINADO</strong><br><input type="text" placeholder="Local Examinado"></td>
-                <td><strong>TEMPERATURA</strong><br><input type="text" placeholder="Temperatura"></td>
-            </tr>
-        </table>
-        <p>O vaso sob pressão possui espessuras maiores que as exigidas para o nível de pressão de operação e PMTA, estando em conformidade com o ensaio de segurança estrutural. O mapeamento de corrosão B-SCAN não detectou anomalias no perfil de espessura interno do costado e dos tampos, também estando conforme.</p>
-        <div class="page-footer">Página 11 de 16 - Laudo Técnico de Vaso de Pressão</div>
+        <div class="full-text">O vaso sob pressão possui espessuras maiores que as exigidas para o nível de pressão de operação e PMTA...</div>
+        <div class="page-footer">Página 11 de 16</div>
     </div>
-    
-    <!-- PÁGINA 12 -->
+
     <div class="page" id="page-12">
-        <div class="page-header">
-            <strong>LAUDO TÉCNICO DE VASO DE PRESSÃO</strong> - TAG: <span id="tagHeader12"></span>
-        </div>
-        
+        <div class="page-header"><strong>LAUDO TÉCNICO</strong> - TAG: <span id="tagHeader12"></span></div>
         <div class="image-uploader">
-            <img id="imgCalcFoto" class="image-preview" alt="Foto Equipamento Cálculo">
-            <span class="placeholder-text">
-                <label for="file_gallery_imgCalcFoto" class="upload-btn">Abrir Arquivos</label>
-                <label for="file_camera_imgCalcFoto" class="upload-btn camera-btn">📷 Tirar Foto</label>
-            </span>
-            <input type="file" accept="image/*" id="file_gallery_imgCalcFoto" class="hidden-input">
-            <input type="file" accept="image/*;capture=camera" id="file_camera_imgCalcFoto" class="hidden-input">
+            <img id="imgCalcFoto" class="image-preview">
+            <span class="placeholder-text"><label for="f_imgCalcFoto" class="upload-btn">Foto Equipamento</label></span>
+            <input type="file" id="f_imgCalcFoto" class="hidden-input" onchange="handleImageUpload(event,'imgCalcFoto')">
         </div>
-        
-        <h2>MEMORIAL DE CÁLCULO ASME VIII DIV. 1</h2>
-        
-        <h3>PARAMETROS PARA CÁLCULO PMTA (Campos de Cálculo)</h3>
+        <h3>MEMORIAL DE CÁLCULO (INPUTS)</h3>
         <table>
-            <tr><th colspan="4">DADOS CONSTRUTIVOS</th></tr>
-            <tr><th>DESCRIÇÃO</th><th>SÍMBOLO</th><th>VALOR</th><th>UNIDADE</th></tr>
-            <tr>
-                <td>Diâmetro interno (mm)</td>
-                <td>D</td>
-                <td><input type="number" step="0.01" id="D" placeholder="1235.20"></td>
-                <td>mm</td>
-            </tr>
-            <tr>
-                <td>Espessura mínima casco (ultrassom)</td>
-                <td>T<sub>C</sub></td>
-                <td><input type="number" step="0.1" id="tc" placeholder="7.4"></td>
-                <td>mm</td>
-            </tr>
-            <tr>
-                <td>Espessura mínima tampo esquerdo (ultrassom)</td>
-                <td>T<sub>TL</sub></td>
-                <td><input type="number" step="0.1" id="ttl" placeholder="7.1"></td>
-                <td>mm</td>
-            </tr>
-            <tr>
-                <td>Espessura minima tampo direito (ultrassom)</td>
-                <td>T<sub>TS</sub></td>
-                <td><input type="number" step="0.1" id="tts" placeholder="12.1"></td>
-                <td>mm</td>
-            </tr>
-            <tr>
-                <td>Tensão admissível casco (Kgf/cm²)</td>
-                <td>S<sub>C</sub></td>
-                <td><input type="number" step="0.1" id="sc" placeholder="1167.10"></td>
-                <td>Kgf/cm²</td>
-            </tr>
-            <tr>
-                <td>Tensão admissível tampos (Kgf/cm²)</td>
-                <td>S<sub>T</sub></td>
-                <td><input type="number" step="0.1" id="st" placeholder="1167.10"></td>
-                <td>Kgf/cm²</td>
-            </tr>
-            <tr>
-                <td>Eficiência da junta long.</td>
-                <td>E<sub>L</sub></td>
-                <td><input type="number" step="0.01" id="el" placeholder="0.70"></td>
-                <td>ADMENS.</td>
-            </tr>
-            <tr>
-                <td>Eficiência da junta circ.</td>
-                <td>E<sub>C</sub></td>
-                <td><input type="number" step="0.01" id="ec" placeholder="0.70"></td>
-                <td>ADMENS.</td>
-            </tr>
+            <tr><td>Diâmetro (D)</td><td><input type="number" id="D" placeholder="mm"></td><td>Esp. Casco (Tc)</td><td><input type="number" id="tc" placeholder="mm"></td></tr>
+            <tr><td>Esp. Tampo Esq (Ttl)</td><td><input type="number" id="ttl" placeholder="mm"></td><td>Esp. Tampo Dir (Tts)</td><td><input type="number" id="tts" placeholder="mm"></td></tr>
+            <tr><td>Tensão Casco (Sc)</td><td><input type="number" id="sc" placeholder="Kgf/cm²"></td><td>Tensão Tampo (St)</td><td><input type="number" id="st" placeholder="Kgf/cm²"></td></tr>
+            <tr><td>Eficiência Long (El)</td><td><input type="number" id="el" placeholder="0-1"></td><td>Eficiência Circ (Ec)</td><td><input type="number" id="ec" placeholder="0-1"></td></tr>
         </table>
-        <div class="page-footer">Página 12 de 16 - Laudo Técnico de Vaso de Pressão</div>
+        <div class="page-footer">Página 12 de 16</div>
     </div>
-    
-    <!-- PÁGINA 13 - ATUALIZADA COM EQUAÇÕES -->
+
     <div class="page" id="page-13">
-        <div class="page-header">
-            <strong>LAUDO TÉCNICO DE VASO DE PRESSÃO</strong> - TAG: <span id="tagHeader13"></span>
-        </div>
-        
+        <div class="page-header"><strong>LAUDO TÉCNICO</strong> - TAG: <span id="tagHeader13"></span></div>
         <h2>CÁLCULO PMTA</h2>
-        <p class="center">CÁLCULO DAS PRESSÕES MÁXIMAS DE TRABALHO ADMITIDAS (PMTA)</p>
-        
         <table>
-            <tr><th>COMPONENTES</th><th>EQUAÇÕES (ASME VIII - DIV. 1)</th><th>PMTAS CALCULADAS</th></tr>
-            <tr>
-                <td>CASCO TENSÃO LONGITUDINAL</td>
-                <td>
-                    <div class="equation">
-                        $$P_{1} = \frac{2 \cdot S_{c} \cdot T_{c} \cdot E_{L}}{ \frac{D}{2} - 0,4 \cdot T_{c} }$$
-                    </div>
-                </td>
-                <td><strong><span id="outP1">-</span> Kgf/cm²</strong></td>
-            </tr>
-            <tr>
-                <td>CASCO TENSÃO CIRCUNFERENCIAL</td>
-                <td>
-                    <div class="equation">
-                        $$P_{2} = \frac{S_{C} \cdot T_{C} \cdot E_{C}}{ \frac{D}{2} + 0,6 \cdot T_{C} }$$
-                    </div>
-                </td>
-                <td><strong><span id="outP2">-</span> Kgf/cm²</strong></td>
-            </tr>
-            <tr>
-                <td>TAMPO ESQUERDO</td>
-                <td>
-                    <div class="equation">
-                        $$P_{3} = \frac{2 \cdot S_{T} \cdot T_{TL} \cdot E_{c}}{ M \cdot L + 0,2 \cdot T_{C} }$$
-                        <div style="font-size: 9pt; margin-top: 5px;">
-                            Onde: \( M = 0,25 \cdot (3 + \sqrt{L/r}) \), \( L = 0,9045 \cdot D \), \( r = 0,1727 \cdot D \)
-                        </div>
-                    </div>
-                </td>
-                <td><strong><span id="outP3">-</span> Kgf/cm²</strong></td>
-            </tr>
-            <tr>
-                <td>TAMPO DIREITO</td>
-                <td>
-                    <div class="equation">
-                        $$P_{4} = \frac{2 \cdot S_{T} \cdot T_{TS} \cdot E_{c}}{ M \cdot L + 0,2 \cdot T_{C} }$$
-                    </div>
-                </td>
-                <td><strong><span id="outP4">-</span> Kgf/cm²</strong></td>
-            </tr>
-            <tr>
-                <td>PRESSÃO MÁXIMA DE TRABALHO ADMITIDA (PMTA ADOTADA)</td>
-                <td>Valor de Placa ou o menor valor calculado (a critério do PH)</td>
-                <td><input type="number" step="0.1" id="pmtaAdotada" placeholder="4.0"> <strong>Kgf/cm²</strong></td>
-            </tr>
-            <tr>
-                <td>PRESSÃO DE TESTE HIDROSTÁTICO (Baseado na PMTA Adotada x 1.5)</td>
-                <td>
-                    <div class="equation">
-                        $$P_{TH} = P_{MTA\_Adotada} \times 1,5$$
-                    </div>
-                </td>
-                <td><strong><span id="outPth">-</span> Kgf/cm²</strong></td>
-            </tr>
+            <tr><th>COMPONENTE</th><th>FÓRMULA</th><th>RESULTADO</th></tr>
+            <tr><td>Casco Long. (P1)</td><td>...</td><td><strong><span id="outP1">-</span> Kgf/cm²</strong></td></tr>
+            <tr><td>Casco Circ. (P2)</td><td>...</td><td><strong><span id="outP2">-</span> Kgf/cm²</strong></td></tr>
+            <tr><td>Tampo Esq. (P3)</td><td>...</td><td><strong><span id="outP3">-</span> Kgf/cm²</strong></td></tr>
+            <tr><td>Tampo Dir. (P4)</td><td>...</td><td><strong><span id="outP4">-</span> Kgf/cm²</strong></td></tr>
+            <tr><td>PMTA ADOTADA</td><td>(Entrada Manual)</td><td><input type="number" id="pmtaAdotada" placeholder="Kgf/cm²"></td></tr>
+            <tr><td>Teste Hidro (Pth)</td><td>PMTA x 1.5</td><td><strong><span id="outPth">-</span> Kgf/cm²</strong></td></tr>
         </table>
-        
-        <!-- SEÇÃO DE CÁLCULOS INTERMEDIÁRIOS -->
-        <h3 style="margin-top: 20px;">CÁLCULOS INTERMEDIÁRIOS</h3>
+        <h3>INTERMEDIÁRIOS</h3>
         <table>
-            <tr><th>DESCRIÇÃO</th><th>FÓRMULA</th><th>VALOR CALCULADO</th></tr>
-            <tr>
-                <td>Comprimento do tampo (L)</td>
-                <td>\( L = 0,9045 \times D \)</td>
-                <td><strong><span id="outL">-</span> mm</strong></td>
-            </tr>
-            <tr>
-                <td>Raio interno do tampo (r)</td>
-                <td>\( r = 0,1727 \times D \)</td>
-                <td><strong><span id="outR">-</span> mm</strong></td>
-            </tr>
-            <tr>
-                <td>Fator M (tampo torisférico)</td>
-                <td>\( M = 0,25 \times (3 + \sqrt{L/r}) \)</td>
-                <td><strong><span id="outM">-</span></strong></td>
-            </tr>
+            <tr><td>L: <span id="outL">-</span></td><td>r: <span id="outR">-</span></td><td>M: <span id="outM">-</span></td></tr>
         </table>
-        
-        <div class="page-footer">Página 13 de 16 - Laudo Técnico de Vaso de Pressão</div>
+        <div class="page-footer">Página 13 de 16</div>
     </div>
-    
-    <!-- PÁGINA 14 -->
+
     <div class="page" id="page-14">
-        <div class="page-header">
-            <strong>LAUDO TÉCNICO DE VASO DE PRESSÃO</strong> - TAG: <span id="tagHeader14"></span>
+        <div class="page-header"><strong>LAUDO TÉCNICO</strong> - TAG: <span id="tagHeader14"></span></div>
+        <h3>PMTA CALCULADA</h3>
+        <div class="center" style="font-size:14pt; margin:20px; font-weight:bold;">
+            Menor Valor: <span id="outPmtaCalc">-</span> Kgf/cm²<br>
+            (<span id="outPmtaCalcMPa">-</span> MPa)
         </div>
-        <table>
-            <tr><th colspan="4">PRESSÃO MÁXIMA DE TRABALHO ADMISSÍVEL (PMTA) - *CALCULADA*</th></tr>
-            <tr>
-                <td>PMTA DO EQUIPAMENTO</td>
-                <td>LIMITADA POR MENOR PRESSÃO ADMITIDA (Min(P2, P3, P4))</td>
-                <td><strong>P<sub>MTA</sub> = <span id="outPmtaCalc">-</span> Kgf/cm²</strong></td>
-                <td><strong>P<sub>MTA</sub> = <span id="outPmtaCalcMPa">-</span> MPa</strong></td>
-                <td><strong>P<sub>MTA</sub> = <span id="outPmtaCalcPSI">-</span> PSI</strong></td>
-            </tr>
-        </table>
-        
         <h2>RECOMENDAÇÕES</h2>
-        <div class="full-text">1) Os vasos sob pressão e equipamentos devem ser submetidos à manutenção preventiva e corretiva, de forma periódica determinada pelo fabricante.
-2) Recomenda-se que seja feita inspeção anual dos dispositivos e circuitos elétricos de segurança, através de um profissional habilitado...
-3) As manutenções preventivas com potencial de causar acidentes do trabalho devem ser objeto de planejamento...</div>
-        <div class="page-footer">Página 14 de 16 - Laudo Técnico de Vaso de Pressão</div>
+        <div class="full-text">1) Manutenção preventiva e corretiva periódica.<br>2) Inspeção anual de dispositivos de segurança.<br>3) Planejamento de intervenções.</div>
+        <div class="page-footer">Página 14 de 16</div>
     </div>
-    
-    <!-- PÁGINA 15 -->
+
     <div class="page" id="page-15">
-        <div class="page-header">
-            <strong>LAUDO TÉCNICO DE VASO DE PRESSÃO</strong> - TAG: <span id="tagHeader15"></span>
-        </div>
-        <ol start="5">
-            <li><div class="full-text">A manutenção, inspeção, reparos, limpeza, ajuste e outras intervenções que se fizerem necessárias devem ser executadas por profissionais capacitados, qualificados ou legalmente habilitados...</div></li>
-            <li><div class="full-text">A manutenção dos vasos sob pressão e equipamentos contemplará, dentre outros itens, a realização de ensaios não destrutivos END...</div></li>
-            <li><div class="full-text">Nas manutenções dos vasos sob pressão e equipamentos, sempre que detectado qualquer defeito em peça ou componente que comprometa a segurança...</div></li>
-        </ol>
-        <div class="page-footer">Página 15 de 16 - Laudo Técnico de Vaso de Pressão</div>
+        <div class="page-header"><strong>LAUDO TÉCNICO</strong> - TAG: <span id="tagHeader15"></span></div>
+        <div class="full-text">4) Execução por profissionais habilitados.<br>5) Realização de ENDs.<br>6) Correção imediata de defeitos críticos.</div>
+        <div class="page-footer">Página 15 de 16</div>
     </div>
-    
-    <!-- PÁGINA 16 -->
+
     <div class="page" id="page-16">
-        <div class="page-header">
-            <strong>LAUDO TÉCNICO DE VASO DE PRESSÃO</strong> - TAG: <span id="tagHeader16"></span>
-        </div>
+        <div class="page-header"><strong>LAUDO TÉCNICO</strong> - TAG: <span id="tagHeader16"></span></div>
         <h2>CONSIDERAÇÕES FINAIS</h2>
-        <p><strong>ITENS EM ATENDIMENTO À NR-13</strong></p>
-        <div class="full-text">- O vaso de pressão está em acordo com o estabelecido na Norma Regulamentadora n°13 (NR13)</div>
-        <p><strong>REQUISITOS</strong></p>
-        <div class="full-text">- Realizar semanalmente teste de abertura manual da válvula de segurança como medidas preventivas de segurança;</div>
-        
+        <p>O vaso está em acordo com a NR-13.</p>
         <h2>RESULTADOS</h2>
         <table>
-            <tr><th>DESCRIÇÃO</th><th>RESULTADO</th></tr>
-            <tr>
-                <td>PRESSÃO MÁXIMA DE TRABALHO ADMITIDA (PMTA)</td>
-                <td><strong><input type="text" id="pmtaFinalResultado" placeholder="PMTA Final" style="font-weight:bold;"></strong></td>
-            </tr>
-            <tr>
-                <td>RESULTADO INSPEÇÃO EXTERNA E VISUAL</td>
-                <td><input type="text" placeholder="Resultado"></td>
-            </tr>
-            <tr>
-                <td>END - MEDIÇÃO DE ESPESSURA (ULTRASSOM ESTRUTURAL)</td>
-                <td><input type="text" placeholder="Resultado"></td>
-            </tr>
-            <tr>
-                <td>END - ULTRASSOM (DESCONTINUIDADES SOLDAGENS)</td>
-                <td><input type="text" placeholder="Resultado"></td>
-            </tr>
+            <tr><td>PMTA FINAL</td><td><strong><input type="text" id="pmtaFinalResultado" readonly></strong></td></tr>
+            <tr><td>INSPEÇÃO VISUAL</td><td><input type="text" value="APROVADO"></td></tr>
+            <tr><td>ULTRASSOM</td><td><input type="text" value="APROVADO"></td></tr>
         </table>
-        
         <h2>PARECER CONCLUSIVO</h2>
-        <div class="full-text" id="parecerConclusivo">Através dos resultados obtidos inspeção de espessura de chapa em obediência à NR-13 e atendendo os requisitos apontados neste laudo, o equipamento estará liberado para funcionamento normal, dentro dos limites estabelecidos pela PMTA.</div>
-        
+        <div class="full-text" id="parecerConclusivo">Equipamento liberado para funcionamento.</div>
         <h2>PRÓXIMA INSPEÇÃO</h2>
-        <table>
-            <tr><th>DESCRIÇÃO</th><th>DATA DA PRÓXIMA INSPEÇÃO</th></tr>
-            <tr>
-                <td>EXAME EXTERNO</td>
-                <td><input type="date" id="proximaInspecao"></td>
-            </tr>
-        </table>
+        <input type="date" id="proximaInspecao">
         
-        <!-- DADOS FIXOS DO RESPONSÁVEL -->
-        <div class="signature" style="margin-top: 60px; text-align: center;">
-            <p>_______________________________________</p>
-            <p>
-                <strong>LENIN MATHEUS COMINEZI ALMEIDA</strong><br>
-                <strong>ENGENHEIRO MECÂNICO</strong><br>
-                <strong>CREA-PR 203716/D</strong>
-            </p>
+        <div class="center" style="margin-top:40px;">
+            _______________________________________<br>
+            <strong>LENIN MATHEUS COMINEZI ALMEIDA</strong><br>
+            ENGENHEIRO MECÂNICO<br>CREA-PR 203716/D
         </div>
-        
-        <div class="page-footer">Página 16 de 16 - Laudo Técnico de Vaso de Pressão</div>
+        <div class="page-footer">Página 16 de 16</div>
     </div>
 
     <script src="laudo.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js');
+        }
+    </script>
 </body>
 </html>
