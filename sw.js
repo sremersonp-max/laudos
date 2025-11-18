@@ -1,5 +1,5 @@
 // Service Worker para Laudo Vasos PWA
-const CACHE_NAME = 'laudo-vasos-v1.2';
+const CACHE_NAME = 'laudo-vasos-v1.3';
 const urlsToCache = [
   './',
   './index.html',
