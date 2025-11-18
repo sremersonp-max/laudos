@@ -175,26 +175,58 @@ function setupImageUploadListeners() {
     });
 }
 
+// --- Substituir a função handleImageUpload antiga por esta ---
 function handleImageUpload(event, imgId) {
     const file = event.target.files[0];
     if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
+        // Chama a compressão antes de mostrar
+        compressImage(file, 800, 0.7, function(compressedSrc) {
             const imgElement = document.getElementById(imgId);
             if(imgElement) {
-                imgElement.src = e.target.result;
+                imgElement.src = compressedSrc;
                 imgElement.style.display = 'block';
+                
+                // Esconder o texto de placeholder
                 const uploader = imgElement.closest('.image-uploader');
                 if(uploader) {
                     const ph = uploader.querySelector('.placeholder-text');
                     if(ph) ph.style.display = 'none';
                 }
             }
-        }
-        reader.readAsDataURL(file);
+        });
     }
 }
 
+// --- Adicionar esta NOVA função no final do arquivo ---
+function compressImage(file, maxWidth, quality, callback) {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = function(event) {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+
+            // Redimensionar mantendo proporção
+            if (width > maxWidth) {
+                height *= maxWidth / width;
+                width = maxWidth;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // Converter para Base64 comprimido (JPEG)
+            const dataUrl = canvas.toDataURL('image/jpeg', quality);
+            callback(dataUrl);
+        }
+    }
+}
 // --- Tabela Dinâmica (Pág 10) ---
 function addMeasurementRow() {
     measurementPhotoCounter++;
