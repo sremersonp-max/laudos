@@ -32,8 +32,8 @@
                 <label for="file_gallery_imgPage1" class="upload-btn">Galeria</label>
                 <label for="file_camera_imgPage1" class="upload-btn camera-btn">📷 Foto</label>
             </span>
-            <input type="file" accept="image/*" id="file_gallery_imgPage1" class="hidden-input">
-            <input type="file" accept="image/*;capture=camera" id="file_camera_imgPage1" class="hidden-input">
+            <input type="file" accept="image/*" id="file_gallery_imgPage1" class="hidden-input" onchange="handleImageUpload(event, 'imgPage1')">
+            <input type="file" accept="image/*;capture=camera" id="file_camera_imgPage1" class="hidden-input" onchange="handleImageUpload(event, 'imgPage1')">
         </div>
         <h1>LAUDO TÉCNICO DE VASO DE PRESSÃO</h1>
         <h2 style="background:none; text-align:center; font-size: 14pt;">TAG: <input type="text" id="tag" placeholder="Ex: GA8003" style="width: 150px;"></h2>
@@ -156,8 +156,12 @@
         <div class="page-header"><strong>LAUDO TÉCNICO</strong> - TAG: <span id="tagHeader8"></span></div>
         <div class="image-uploader">
             <img id="imgPlaca" class="image-preview" alt="Placa">
-            <span class="placeholder-text"><label for="file_gallery_imgPlaca" class="upload-btn">Placa (Foto)</label></span>
-            <input type="file" accept="image/*" id="file_gallery_imgPlaca" class="hidden-input">
+            <span class="placeholder-text">
+                <label for="fg_imgPlaca" class="upload-btn">Placa (Galeria)</label>
+                <label for="fc_imgPlaca" class="upload-btn camera-btn">📷 Foto</label>
+            </span>
+            <input type="file" accept="image/*" id="fg_imgPlaca" class="hidden-input" onchange="handleImageUpload(event, 'imgPlaca')">
+            <input type="file" accept="image/*;capture=camera" id="fc_imgPlaca" class="hidden-input" onchange="handleImageUpload(event, 'imgPlaca')">
         </div>
         <h3>Dispositivos de Segurança</h3>
         <table>
@@ -167,8 +171,12 @@
                 <td>
                     <div class="image-uploader" style="min-height:60px; margin:0; padding:5px;">
                         <img id="imgValvula" class="image-preview" style="max-height:60px; display:none;">
-                        <label for="fg_imgValvula" class="upload-btn-small">📷</label>
+                        <span class="placeholder-text">
+                            <label for="fg_imgValvula" class="upload-btn-small">📂</label>
+                            <label for="fc_imgValvula" class="upload-btn-small camera-btn">📷</label>
+                        </span>
                         <input type="file" accept="image/*" id="fg_imgValvula" class="hidden-input" onchange="handleImageUpload(event, 'imgValvula')">
+                        <input type="file" accept="image/*;capture=camera" id="fc_imgValvula" class="hidden-input" onchange="handleImageUpload(event, 'imgValvula')">
                     </div>
                 </td>
             </tr>
@@ -178,8 +186,12 @@
                 <td>
                     <div class="image-uploader" style="min-height:60px; margin:0; padding:5px;">
                         <img id="imgManometro" class="image-preview" style="max-height:60px; display:none;">
-                        <label for="fg_imgManometro" class="upload-btn-small">📷</label>
+                        <span class="placeholder-text">
+                            <label for="fg_imgManometro" class="upload-btn-small">📂</label>
+                            <label for="fc_imgManometro" class="upload-btn-small camera-btn">📷</label>
+                        </span>
                         <input type="file" accept="image/*" id="fg_imgManometro" class="hidden-input" onchange="handleImageUpload(event, 'imgManometro')">
+                        <input type="file" accept="image/*;capture=camera" id="fc_imgManometro" class="hidden-input" onchange="handleImageUpload(event, 'imgManometro')">
                     </div>
                 </td>
             </tr>
@@ -193,18 +205,50 @@
         <table style="border:none;">
             <tr>
                 <td style="border:none; padding:2px;">
-                   <div class="image-uploader" style="min-height:80px; margin:5px 0;"><img id="imgReg1" class="image-preview"><label for="f_imgReg1" class="upload-btn-small">Foto 1</label><input type="file" id="f_imgReg1" class="hidden-input" onchange="handleImageUpload(event,'imgReg1')"></div>
+                   <div class="image-uploader" style="min-height:80px; margin:5px 0;">
+                       <img id="imgReg1" class="image-preview">
+                       <span class="placeholder-text">
+                           <label for="fg_imgReg1" class="upload-btn-small">📂 1</label>
+                           <label for="fc_imgReg1" class="upload-btn-small camera-btn">📷</label>
+                       </span>
+                       <input type="file" accept="image/*" id="fg_imgReg1" class="hidden-input" onchange="handleImageUpload(event,'imgReg1')">
+                       <input type="file" accept="image/*;capture=camera" id="fc_imgReg1" class="hidden-input" onchange="handleImageUpload(event,'imgReg1')">
+                   </div>
                 </td>
                 <td style="border:none; padding:2px;">
-                   <div class="image-uploader" style="min-height:80px; margin:5px 0;"><img id="imgReg2" class="image-preview"><label for="f_imgReg2" class="upload-btn-small">Foto 2</label><input type="file" id="f_imgReg2" class="hidden-input" onchange="handleImageUpload(event,'imgReg2')"></div>
+                   <div class="image-uploader" style="min-height:80px; margin:5px 0;">
+                       <img id="imgReg2" class="image-preview">
+                       <span class="placeholder-text">
+                           <label for="fg_imgReg2" class="upload-btn-small">📂 2</label>
+                           <label for="fc_imgReg2" class="upload-btn-small camera-btn">📷</label>
+                       </span>
+                       <input type="file" accept="image/*" id="fg_imgReg2" class="hidden-input" onchange="handleImageUpload(event,'imgReg2')">
+                       <input type="file" accept="image/*;capture=camera" id="fc_imgReg2" class="hidden-input" onchange="handleImageUpload(event,'imgReg2')">
+                   </div>
                 </td>
             </tr>
             <tr>
                 <td style="border:none; padding:2px;">
-                   <div class="image-uploader" style="min-height:80px; margin:5px 0;"><img id="imgReg3" class="image-preview"><label for="f_imgReg3" class="upload-btn-small">Foto 3</label><input type="file" id="f_imgReg3" class="hidden-input" onchange="handleImageUpload(event,'imgReg3')"></div>
+                   <div class="image-uploader" style="min-height:80px; margin:5px 0;">
+                       <img id="imgReg3" class="image-preview">
+                       <span class="placeholder-text">
+                           <label for="fg_imgReg3" class="upload-btn-small">📂 3</label>
+                           <label for="fc_imgReg3" class="upload-btn-small camera-btn">📷</label>
+                       </span>
+                       <input type="file" accept="image/*" id="fg_imgReg3" class="hidden-input" onchange="handleImageUpload(event,'imgReg3')">
+                       <input type="file" accept="image/*;capture=camera" id="fc_imgReg3" class="hidden-input" onchange="handleImageUpload(event,'imgReg3')">
+                   </div>
                 </td>
                 <td style="border:none; padding:2px;">
-                   <div class="image-uploader" style="min-height:80px; margin:5px 0;"><img id="imgReg4" class="image-preview"><label for="f_imgReg4" class="upload-btn-small">Foto 4</label><input type="file" id="f_imgReg4" class="hidden-input" onchange="handleImageUpload(event,'imgReg4')"></div>
+                   <div class="image-uploader" style="min-height:80px; margin:5px 0;">
+                       <img id="imgReg4" class="image-preview">
+                       <span class="placeholder-text">
+                           <label for="fg_imgReg4" class="upload-btn-small">📂 4</label>
+                           <label for="fc_imgReg4" class="upload-btn-small camera-btn">📷</label>
+                       </span>
+                       <input type="file" accept="image/*" id="fg_imgReg4" class="hidden-input" onchange="handleImageUpload(event,'imgReg4')">
+                       <input type="file" accept="image/*;capture=camera" id="fc_imgReg4" class="hidden-input" onchange="handleImageUpload(event,'imgReg4')">
+                   </div>
                 </td>
             </tr>
         </table>
@@ -215,9 +259,33 @@
         <div class="page-header"><strong>LAUDO TÉCNICO</strong> - TAG: <span id="tagHeader10"></span></div>
         <h2>MEDIÇÃO DE ESPESSURA (ME)</h2>
         <div style="display:flex; gap:5px;">
-            <div class="image-uploader" style="flex:1; min-height:80px;"><img id="imgDiagramaCorpo" class="image-preview"><label for="f_imgDiagramaCorpo" class="upload-btn-small">Corpo</label><input type="file" id="f_imgDiagramaCorpo" class="hidden-input" onchange="handleImageUpload(event,'imgDiagramaCorpo')"></div>
-            <div class="image-uploader" style="flex:1; min-height:80px;"><img id="imgDiagramaEsq" class="image-preview"><label for="f_imgDiagramaEsq" class="upload-btn-small">T.Esq</label><input type="file" id="f_imgDiagramaEsq" class="hidden-input" onchange="handleImageUpload(event,'imgDiagramaEsq')"></div>
-            <div class="image-uploader" style="flex:1; min-height:80px;"><img id="imgDiagramaDir" class="image-preview"><label for="f_imgDiagramaDir" class="upload-btn-small">T.Dir</label><input type="file" id="f_imgDiagramaDir" class="hidden-input" onchange="handleImageUpload(event,'imgDiagramaDir')"></div>
+            <div class="image-uploader" style="flex:1; min-height:80px;">
+                <img id="imgDiagramaCorpo" class="image-preview">
+                <span class="placeholder-text">
+                    <label for="fg_imgDiagramaCorpo" class="upload-btn-small">📂</label>
+                    <label for="fc_imgDiagramaCorpo" class="upload-btn-small camera-btn">📷</label>
+                </span>
+                <input type="file" accept="image/*" id="fg_imgDiagramaCorpo" class="hidden-input" onchange="handleImageUpload(event,'imgDiagramaCorpo')">
+                <input type="file" accept="image/*;capture=camera" id="fc_imgDiagramaCorpo" class="hidden-input" onchange="handleImageUpload(event,'imgDiagramaCorpo')">
+            </div>
+            <div class="image-uploader" style="flex:1; min-height:80px;">
+                <img id="imgDiagramaEsq" class="image-preview">
+                <span class="placeholder-text">
+                    <label for="fg_imgDiagramaEsq" class="upload-btn-small">📂</label>
+                    <label for="fc_imgDiagramaEsq" class="upload-btn-small camera-btn">📷</label>
+                </span>
+                <input type="file" accept="image/*" id="fg_imgDiagramaEsq" class="hidden-input" onchange="handleImageUpload(event,'imgDiagramaEsq')">
+                <input type="file" accept="image/*;capture=camera" id="fc_imgDiagramaEsq" class="hidden-input" onchange="handleImageUpload(event,'imgDiagramaEsq')">
+            </div>
+            <div class="image-uploader" style="flex:1; min-height:80px;">
+                <img id="imgDiagramaDir" class="image-preview">
+                <span class="placeholder-text">
+                    <label for="fg_imgDiagramaDir" class="upload-btn-small">📂</label>
+                    <label for="fc_imgDiagramaDir" class="upload-btn-small camera-btn">📷</label>
+                </span>
+                <input type="file" accept="image/*" id="fg_imgDiagramaDir" class="hidden-input" onchange="handleImageUpload(event,'imgDiagramaDir')">
+                <input type="file" accept="image/*;capture=camera" id="fc_imgDiagramaDir" class="hidden-input" onchange="handleImageUpload(event,'imgDiagramaDir')">
+            </div>
         </div>
         
         <table style="width:100%;">
@@ -249,8 +317,12 @@
         <div class="page-header"><strong>LAUDO TÉCNICO</strong> - TAG: <span id="tagHeader12"></span></div>
         <div class="image-uploader">
             <img id="imgCalcFoto" class="image-preview">
-            <span class="placeholder-text"><label for="f_imgCalcFoto" class="upload-btn">Foto Equipamento</label></span>
-            <input type="file" id="f_imgCalcFoto" class="hidden-input" onchange="handleImageUpload(event,'imgCalcFoto')">
+            <span class="placeholder-text">
+                <label for="fg_imgCalcFoto" class="upload-btn">Galeria</label>
+                <label for="fc_imgCalcFoto" class="upload-btn camera-btn">📷 Foto</label>
+            </span>
+            <input type="file" accept="image/*" id="fg_imgCalcFoto" class="hidden-input" onchange="handleImageUpload(event,'imgCalcFoto')">
+            <input type="file" accept="image/*;capture=camera" id="fc_imgCalcFoto" class="hidden-input" onchange="handleImageUpload(event,'imgCalcFoto')">
         </div>
         <h3>MEMORIAL DE CÁLCULO (INPUTS)</h3>
         <table>
