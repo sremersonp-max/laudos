@@ -7,13 +7,17 @@
     <style>
         body {
             font-family: sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
             margin: 0;
+            padding: 20px;
             background-color: #f0f2f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
         }
         .card {
             background: white;
@@ -21,6 +25,7 @@
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             text-align: center;
+            margin-bottom: 30px;
         }
         h1 { margin-bottom: 20px; color: #333; }
         .btn {
@@ -32,15 +37,203 @@
             font-size: 18px;
             font-weight: bold;
             transition: background 0.3s;
+            border: none;
+            cursor: pointer;
+            display: inline-block;
+            margin: 5px;
         }
         .btn:hover { background-color: #0056b3; }
+        .btn-success { background-color: #28a745; }
+        .btn-success:hover { background-color: #218838; }
+        .btn-danger { background-color: #dc3545; }
+        .btn-danger:hover { background-color: #c82333; }
+        
+        .laudos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        .laudo-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-left: 4px solid #007bff;
+        }
+        .laudo-card h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .laudo-card p {
+            margin: 5px 0;
+            color: #666;
+        }
+        .laudo-actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h1>Gerador de Laudos NR-13</h1>
-        <p style="margin-bottom: 30px; color: #666;">Sistema para emissão e cálculo de vasos de pressão.</p>
-        <a href="laudo.html" class="btn">Abrir Sistema</a>
+    <div class="container">
+        <div class="header">
+            <h1>Sistema de Laudos NR-13</h1>
+            <p>Sistema para emissão e cálculo de vasos de pressão.</p>
+        </div>
+        
+        <div class="card">
+            <button class="btn" onclick="novoLaudo()">Novo Laudo</button>
+            <button class="btn btn-success" onclick="importarLaudo()">Importar Laudo</button>
+        </div>
+        
+        <h2>Laudos Salvos</h2>
+        <div id="laudosSalvos" class="laudos-grid">
+            <!-- Laudos serão carregados aqui -->
+        </div>
     </div>
+
+    <script>
+        // Sistema de Gerenciamento de Laudos
+        const LAUDOS_KEY = 'laudos_nr13';
+        
+        function novoLaudo() {
+            // Limpa o laudo atual em edição
+            localStorage.removeItem('laudo_em_edicao');
+            window.location.href = 'laudo.html';
+        }
+        
+        function carregarLaudos() {
+            const laudosSalvos = document.getElementById('laudosSalvos');
+            const laudos = obterLaudos();
+            
+            if (laudos.length === 0) {
+                laudosSalvos.innerHTML = `
+                    <div class="empty-state">
+                        <p>Nenhum laudo salvo ainda.</p>
+                        <p>Clique em "Novo Laudo" para criar seu primeiro laudo.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            laudosSalvos.innerHTML = laudos.map((laudo, index) => `
+                <div class="laudo-card">
+                    <h3>${laudo.tag || 'Laudo sem TAG'}</h3>
+                    <p><strong>Número:</strong> ${laudo.numeroLaudo || 'N/A'}</p>
+                    <p><strong>Data:</strong> ${laudo.dataLaudo || 'N/A'}</p>
+                    <p><strong>Cliente:</strong> ${laudo.empresaContratante?.nomeFantasia || 'N/A'}</p>
+                    <p><strong>PMTA:</strong> ${laudo.pmtaAdotada || 'N/A'} Kgf/cm²</p>
+                    <p><strong>Salvo em:</strong> ${new Date(laudo.dataSalvamento).toLocaleDateString('pt-BR')}</p>
+                    <div class="laudo-actions">
+                        <button class="btn" onclick="editarLaudo(${index})">Editar</button>
+                        <button class="btn btn-success" onclick="carregarLaudo(${index})">Abrir</button>
+                        <button class="btn btn-danger" onclick="excluirLaudo(${index})">Excluir</button>
+                        <button class="btn" onclick="exportarLaudo(${index})">Exportar</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function obterLaudos() {
+            return JSON.parse(localStorage.getItem(LAUDOS_KEY) || '[]');
+        }
+        
+        function salvarLaudos(laudos) {
+            localStorage.setItem(LAUDOS_KEY, JSON.stringify(laudos));
+        }
+        
+        function editarLaudo(index) {
+            const laudos = obterLaudos();
+            if (laudos[index]) {
+                // Salva o laudo selecionado para edição
+                localStorage.setItem('laudo_em_edicao', JSON.stringify({
+                    ...laudos[index],
+                    index: index
+                }));
+                window.location.href = 'laudo.html';
+            }
+        }
+        
+        function carregarLaudo(index) {
+            const laudos = obterLaudos();
+            if (laudos[index]) {
+                // Carrega o laudo para visualização/impressão
+                localStorage.setItem('laudo_em_edicao', JSON.stringify({
+                    ...laudos[index],
+                    index: index
+                }));
+                window.location.href = 'laudo.html?modo=visualizacao';
+            }
+        }
+        
+        function excluirLaudo(index) {
+            if (confirm('Tem certeza que deseja excluir este laudo?')) {
+                const laudos = obterLaudos();
+                laudos.splice(index, 1);
+                salvarLaudos(laudos);
+                carregarLaudos();
+            }
+        }
+        
+        function exportarLaudo(index) {
+            const laudos = obterLaudos();
+            const laudo = laudos[index];
+            
+            if (laudo) {
+                const dataStr = JSON.stringify(laudo, null, 2);
+                const dataBlob = new Blob([dataStr], {type: 'application/json'});
+                
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(dataBlob);
+                link.download = `laudo_${laudo.tag || 'vaso'}_${new Date().toISOString().split('T')[0]}.json`;
+                link.click();
+            }
+        }
+        
+        function importarLaudo() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            
+            input.onchange = function(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        try {
+                            const laudo = JSON.parse(e.target.result);
+                            
+                            // Validação básica do laudo
+                            if (laudo && typeof laudo === 'object') {
+                                const laudos = obterLaudos();
+                                laudo.dataSalvamento = new Date().toISOString();
+                                laudos.push(laudo);
+                                salvarLaudos(laudos);
+                                carregarLaudos();
+                                alert('Laudo importado com sucesso!');
+                            } else {
+                                alert('Arquivo inválido.');
+                            }
+                        } catch (error) {
+                            alert('Erro ao importar laudo: ' + error.message);
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            };
+            
+            input.click();
+        }
+        
+        // Carregar laudos quando a página carregar
+        document.addEventListener('DOMContentLoaded', carregarLaudos);
+    </script>
 </body>
 </html>
